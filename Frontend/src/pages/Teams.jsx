@@ -23,7 +23,7 @@ const Teams = ({ teams, setTeams }) => {
     };
 
     // Add New Team Handler
-    const handleAddTeam = (e) => {
+    const handleAddTeam = async (e) => {
         e.preventDefault();
         if (!newTeamName.trim() || !newTeamLead.trim()) return;
 
@@ -36,10 +36,16 @@ const Teams = ({ teams, setTeams }) => {
             members: []
         };
 
-        setTeams([...teams, newTeam]);
-        setNewTeamName('');
-        setNewTeamLead('');
-        setShowTeamModal(false);
+        try {
+            const res = await axios.post('http://localhost:5000/api/teams', newTeam);
+            setTeams([...teams, res.data]);
+            setNewTeamName('');
+            setNewTeamLead('');
+            setShowTeamModal(false);
+        } catch (error) {
+            console.error('Error adding team:', error);
+            alert('Failed to add team');
+        }
     };
 
     // Open Member Modal specifically for a team
@@ -49,7 +55,7 @@ const Teams = ({ teams, setTeams }) => {
     };
 
     // Add New Member Handler
-    const handleAddMember = (e) => {
+    const handleAddMember = async (e) => {
         e.preventDefault();
         if (!newMemberName.trim() || !newMemberRole.trim() || !activeTeamId) return;
 
@@ -59,18 +65,30 @@ const Teams = ({ teams, setTeams }) => {
             status: 'Active'
         };
 
-        const updatedTeams = teams.map(team => {
-            if (team.id === activeTeamId) {
-                return { ...team, members: [...team.members, newMember] };
-            }
-            return team;
-        });
+        const teamToUpdate = teams.find(team => team.id === activeTeamId);
+        if (!teamToUpdate) return;
 
-        setTeams(updatedTeams);
-        setNewMemberName('');
-        setNewMemberRole('');
-        setShowMemberModal(false);
-        setActiveTeamId(null);
+        const updatedMembers = [...teamToUpdate.members, newMember];
+
+        try {
+            const res = await axios.put(`http://localhost:5000/api/teams/${activeTeamId}`, { members: updatedMembers });
+
+            const updatedTeams = teams.map(team => {
+                if (team.id === activeTeamId) {
+                    return res.data;
+                }
+                return team;
+            });
+
+            setTeams(updatedTeams);
+            setNewMemberName('');
+            setNewMemberRole('');
+            setShowMemberModal(false);
+            setActiveTeamId(null);
+        } catch (error) {
+            console.error('Error adding member:', error);
+            alert('Failed to add member to team');
+        }
     };
 
 
@@ -195,7 +213,7 @@ const Teams = ({ teams, setTeams }) => {
                 {/* Teams Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {teams.map((team, idx) => (
-                        <div key={team.id} className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden flex flex-col group hover:border-zinc-700 transition-colors">
+                        <div key={team._id} className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden flex flex-col group hover:border-zinc-700 transition-colors">
                             {/* Team Header */}
                             <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-5 relative overflow-hidden">
                                 {/* Decorative line */}
@@ -205,13 +223,13 @@ const Teams = ({ teams, setTeams }) => {
                                     <h2 className="text-2xl font-bold text-zinc-100 uppercase tracking-wide group-hover:text-amber-400 transition-colors">
                                         {team.name}
                                     </h2>
-                                    <span className="font-mono text-xs text-zinc-600 uppercase">[{team.id}]</span>
+                                    <span className="font-mono text-xs text-zinc-600 uppercase" title={team._id}>[...{team._id.substring(18)}]</span>
                                 </div>
 
                                 <div className="flex justify-between items-center mt-4">
                                     <div className="font-mono text-xs">
                                         <span className="text-zinc-500 uppercase">Unit Lead: </span>
-                                        <span className="text-zinc-300 font-bold">{team.lead}</span>
+                                        <span className="text-zinc-300 font-bold" title={team.lead}>...{team.lead.substring(18)}</span>
                                     </div>
                                     <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border rounded-sm ${getStatusColor(team.status)}`}>
                                         {team.status}
@@ -224,7 +242,7 @@ const Teams = ({ teams, setTeams }) => {
                                 <div className="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2">
                                     <h3 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Roster ({team.members.length})</h3>
                                     <button
-                                        onClick={() => openMemberModal(team.id)}
+                                        onClick={() => openMemberModal(team._id)}
                                         className="text-xs font-mono text-amber-500 hover:text-amber-400 transition-colors uppercase"
                                     >
                                         + Add
@@ -236,9 +254,9 @@ const Teams = ({ teams, setTeams }) => {
                                         <div className="text-center py-4 text-xs font-mono text-zinc-600 uppercase">No operatives assigned</div>
                                     ) : (
                                         team.members.map((member, i) => (
-                                            <div key={i} className="flex justify-between items-center bg-zinc-950 p-3 rounded-sm border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                                            <div key={member._id || i} className="flex justify-between items-center bg-zinc-950 p-3 rounded-sm border border-zinc-800/50 hover:border-zinc-700 transition-colors">
                                                 <div>
-                                                    <p className="font-bold text-zinc-200 text-sm">{member.name}</p>
+                                                    <p className="font-bold text-zinc-200 text-sm" title={member.user}>User: ...{member.user.substring(18)}</p>
                                                     <p className="font-mono text-xs text-zinc-500 mt-1">{member.role}</p>
                                                 </div>
                                                 <span className={`w-2 h-2 rounded-full ${member.status === 'Active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500'}`}></span>

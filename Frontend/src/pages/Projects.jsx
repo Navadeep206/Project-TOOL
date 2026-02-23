@@ -4,6 +4,15 @@ const Projects = ({ projects, setProjects }) => {
     const [showModal, setShowModal] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectPriority, setNewProjectPriority] = useState('Medium');
+    const [newProjectDescription, setNewProjectDescription] = useState('');
+
+    // Generate a fake ObjectId
+    const generateObjectId = () => {
+        const timestamp = (Math.floor(new Date().getTime() / 1000)).toString(16);
+        return timestamp + "xxxxxxxxxxxxxxxx".replace(/[x]/g, () => (
+            Math.floor(Math.random() * 16).toString(16)
+        )).toLowerCase();
+    };
 
     // Simple function to add project
     const addProject = (e) => {
@@ -14,24 +23,26 @@ const Projects = ({ projects, setProjects }) => {
             return;
         }
 
-        const maxId = projects.length > 0 ? Math.max(...projects.map(p => p.id)) : 0;
         const newProj = {
-            id: maxId + 1,
+            _id: generateObjectId(),
             name: newProjectName.trim(),
+            description: newProjectDescription.trim(),
             priority: newProjectPriority,
             status: 'Planning',
-            date: 'TBD'
+            dueDate: new Date().toISOString(), // Mocking current date as due date for now
+            createdBy: '60d5ecb8b392d7001534f5a1' // Mocking logged in user Admin
         };
 
         setProjects([...projects, newProj]);
         setNewProjectName('');
+        setNewProjectDescription('');
         setNewProjectPriority('Medium');
         setShowModal(false);
     };
 
     // Delete project
     const deleteProject = (id) => {
-        setProjects(projects.filter(p => p.id !== id));
+        setProjects(projects.filter(p => p._id !== id));
     };
 
     const getPriorityColor = (priority) => {
@@ -136,18 +147,21 @@ const Projects = ({ projects, setProjects }) => {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {projects.map(proj => (
-                                    <div key={proj.id} className="bg-zinc-950 border border-zinc-800 rounded-sm p-5 hover:border-zinc-600 transition-colors group relative flex flex-col justify-between shadow-sm">
+                                    <div key={proj._id} className="bg-zinc-950 border border-zinc-800 rounded-sm p-5 hover:border-zinc-600 transition-colors group relative flex flex-col justify-between shadow-sm">
                                         <div>
                                             <div className="flex justify-between items-start mb-4">
                                                 <h3 className="text-xl font-bold text-zinc-200 group-hover:text-amber-400 transition-colors truncate pr-2">{proj.name}</h3>
                                                 <button
-                                                    onClick={() => deleteProject(proj.id)}
+                                                    onClick={() => deleteProject(proj._id)}
                                                     className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
                                                     title="Terminate"
                                                 >
                                                     ✕
                                                 </button>
                                             </div>
+                                            {proj.description && (
+                                                <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{proj.description}</p>
+                                            )}
                                             <div className="flex flex-wrap gap-2 mb-6">
                                                 <span className={`text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getPriorityColor(proj.priority)}`}>
                                                     {proj.priority} PR
@@ -158,8 +172,8 @@ const Projects = ({ projects, setProjects }) => {
                                             </div>
                                         </div>
                                         <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-between items-center text-xs text-zinc-500 font-mono">
-                                            <span>ID: {proj.id.toString().padStart(4, '0')}</span>
-                                            <span>ETA: {proj.date}</span>
+                                            <span className="truncate w-24" title={proj._id}>ID: {...proj._id.substring(18)}</span>
+                                            <span>ETA: {new Date(proj.dueDate).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 ))}

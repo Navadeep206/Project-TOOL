@@ -4,22 +4,30 @@ const Tasks = ({ tasks, setTasks, teams }) => {
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [newTaskName, setNewTaskName] = useState('');
     const [newTaskStatus, setNewTaskStatus] = useState('Pending');
-    const [newTaskTeam, setNewTaskTeam] = useState(teams.length > 0 ? teams[0].name : '');
-    const [newTaskPerson, setNewTaskPerson] = useState(teams.length > 0 && teams[0].members.length > 0 ? teams[0].members[0].name : 'Unassigned');
+    const [newTaskTeam, setNewTaskTeam] = useState(teams.length > 0 ? teams[0]._id : '');
+    const [newTaskPerson, setNewTaskPerson] = useState(teams.length > 0 && teams[0].members.length > 0 ? teams[0].members[0].user : 'Unassigned');
+
+    // Generate a fake ObjectId
+    const generateObjectId = () => {
+        const timestamp = (Math.floor(new Date().getTime() / 1000)).toString(16);
+        return timestamp + "xxxxxxxxxxxxxxxx".replace(/[x]/g, () => (
+            Math.floor(Math.random() * 16).toString(16)
+        )).toLowerCase();
+    };
 
     // Derived state for available members based on selected team
     const availableMembers = useMemo(() => {
-        const team = teams.find(t => t.name === newTaskTeam);
+        const team = teams.find(t => t._id === newTaskTeam);
         return team ? team.members : [];
     }, [newTaskTeam, teams]);
 
     // Update person when team changes, or fallback
     const handleTeamChange = (e) => {
-        const selectedTeamName = e.target.value;
-        setNewTaskTeam(selectedTeamName);
-        const team = teams.find(t => t.name === selectedTeamName);
+        const selectedTeamId = e.target.value;
+        setNewTaskTeam(selectedTeamId);
+        const team = teams.find(t => t._id === selectedTeamId);
         if (team && team.members.length > 0) {
-            setNewTaskPerson(team.members[0].name);
+            setNewTaskPerson(team.members[0].user);
         } else {
             setNewTaskPerson('Unassigned');
         }
@@ -27,13 +35,13 @@ const Tasks = ({ tasks, setTasks, teams }) => {
 
     // Delete task
     const deleteTask = (id) => {
-        setTasks(tasks.filter(t => t.id !== id));
+        setTasks(tasks.filter(t => t._id !== id));
     };
 
     // Update task status
     const updateTaskStatus = (id, newStatus) => {
         setTasks(tasks.map(t =>
-            t.id === id ? { ...t, status: newStatus } : t
+            t._id === id ? { ...t, status: newStatus } : t
         ));
     };
 
@@ -52,13 +60,13 @@ const Tasks = ({ tasks, setTasks, teams }) => {
             return;
         }
 
-        const maxId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 0;
         const newTask = {
-            id: maxId + 1,
+            _id: generateObjectId(),
             name: newTaskName.trim(),
             status: newTaskStatus,
             team: newTaskTeam,
-            person: newTaskPerson
+            assignedTo: newTaskPerson,
+            project: '60d5ecc4f682f50015ea1c61' // Hardcoded default project link for mock
         };
 
         setTasks([...tasks, newTask]);
@@ -66,8 +74,8 @@ const Tasks = ({ tasks, setTasks, teams }) => {
         setNewTaskStatus('Pending');
         // Reset to first team
         if (teams.length > 0) {
-            setNewTaskTeam(teams[0].name);
-            setNewTaskPerson(teams[0].members[0] || 'Unassigned');
+            setNewTaskTeam(teams[0]._id);
+            setNewTaskPerson(teams[0].members[0]?.user || 'Unassigned');
         }
         setShowTaskModal(false);
     };
@@ -134,7 +142,7 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                                             className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
                                         >
                                             {teams.map(t => (
-                                                <option key={t.id} value={t.name}>{t.name}</option>
+                                                <option key={t._id} value={t._id}>{t.name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -147,7 +155,7 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                                             disabled={availableMembers.length === 0}
                                         >
                                             {availableMembers.map(member => (
-                                                <option key={member.name} value={member.name}>{member.name}</option>
+                                                <option key={member.user} value={member.user}>User: ...{member.user.substring(18)}</option>
                                             ))}
                                             {availableMembers.length === 0 && (
                                                 <option value="Unassigned">N/A</option>
@@ -195,18 +203,19 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                                 {tasks.map(task => (
-                                    <div key={task.id} className={`bg-zinc-950 border rounded-sm p-5 transition-all group relative ${task.status === 'Done' ? 'border-zinc-800 opacity-60' : 'border-zinc-700 hover:border-emerald-500/50'}`}>
+                                    <div key={task._id} className={`bg-zinc-950 border rounded-sm p-5 transition-all group relative ${task.status === 'Done' ? 'border-zinc-800 opacity-60' : 'border-zinc-700 hover:border-emerald-500/50'}`}>
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className="pr-4">
+                                            <div className="pr-4 w-full">
                                                 <p className={`text-lg font-medium mb-2 truncate ${task.status === 'Done' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
                                                     {task.name}
                                                 </p>
                                                 <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
-                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800">[{task.team}] {task.person}</span>
+                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.team}>Team: {...task.team.substring(18)}</span>
+                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.assignedTo}>User: {...task.assignedTo?.substring(18)}</span>
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={() => deleteTask(task.id)}
+                                                onClick={() => deleteTask(task._id)}
                                                 className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
                                                 title="Terminate Task"
                                             >
@@ -218,7 +227,7 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                                                 {task.status}
                                             </span>
                                             <button
-                                                onClick={() => markTaskCompleted(task.id, task.status)}
+                                                onClick={() => markTaskCompleted(task._id, task.status)}
                                                 className={`text-xs font-mono uppercase font-bold tracking-wider px-4 py-2 rounded-sm transition-all border ${task.status === 'Done'
                                                     ? 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
                                                     : 'bg-emerald-900/40 text-emerald-400 border-emerald-800 hover:bg-emerald-800 hover:text-emerald-100'

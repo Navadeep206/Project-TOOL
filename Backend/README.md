@@ -67,3 +67,33 @@ All models were upgraded from simple flat strings to industrial graph-relational
 - **Database**: MongoDB & Mongoose
 - **Security**: JSON Web Tokens (JWT), bcrypt
 - **Middleware Integration**: cookie-parser, cors
+
+---
+
+## 📋 Audit Logging Module
+
+A dedicated, decoupled activity tracking system forms part of this backend.
+
+### Key Features:
+### Exporters:
+- **Asynchronous Execution**: Logs are stored asynchronously via `setImmediate` in `services/auditLogService.js`, meaning performance isn't blocked.
+- **Data Protection**: Sensitive payloads like `password` or `token` are masked automatically before being saved.
+- **Middleware Interceptors**: Using hooks like `auditAction` and `auditAuthError`, the system listens into `res.on("finish")` events.
+- **Admin Endpoints**: Provides searching, chronological filtering, and pagination over logs at `/api/audit-logs`.
+- **Exporters**: Allows exporting logs natively via `/api/audit-logs/export?format=csv` (or JSON).
+
+*For setup info, check out [`AuditLog-Setup.md`](./AuditLog-Setup.md).*
+
+---
+
+## 📅 Activity History Module (Plugin)
+
+A standalone "plug-in style" activity history system designed to track user actions (create, update, delete, status changes) on projects and related entities without disrupting existing business logic.
+
+### Key Features:
+- **Zero Disruptions**: Hook into existing controller routes using a specialized middleware (`activity.middleware.js`) that safely parses `res.on('finish')`.
+- **Smart Message Generator**: Automatically parses raw data mutations into readable strings like *"Rahul D updated the status of task 'Setup AWS Environments' to 'InProgress'"*.
+- **Non-blocking Operations**: Leverages async fire-and-forget logging out of the main thread to ensure no API slowdowns.
+- **Project-Level APIs**: Dedicated read-only endpoints (`/api/v1/activities/project/:projectId`) to feed frontend timelines with pagination, filtering, and searching capabilities.
+
+*For setup instructions, see the `ActivityHistory-Setup.md` guide.*

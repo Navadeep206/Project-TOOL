@@ -1,0 +1,62 @@
+[
+    {
+        "requestId": "req-99ab12cdef",
+        "requesterId": "usr_777_member_alice",
+        "requesterRole": "MEMBER",
+        "projectId": "proj_101",
+        "requestType": "deadline_extension",
+        "targetEntityId": "task_404",
+        "currentStatus": "pending",
+        "approvalLevel": "manager",
+        "approverId": null,
+        "reason": "Need an extra 3 days. Blocked by external dependency on API payload definitions.",
+        "comments": "",
+        "createdAt": "2023-11-10T08:00:00.000Z",
+        "updatedAt": "2023-11-10T08:00:00.000Z"
+    },
+    {
+        "requestId": "req-88bc34ghij",
+        "requesterId": "usr_888_manager_bob",
+        "requesterRole": "MANAGER",
+        "projectId": "proj_101",
+        "requestType": "delete_project",
+        "targetEntityId": "proj_101",
+        "currentStatus": "in_review",
+        "approvalLevel": "admin",
+        "approverId": null,
+        "reason": "Client cancelled the contract. Project repository needs to be wiped entirely for compliance.",
+        "comments": "",
+        "createdAt": "2023-11-11T14:30:00.000Z",
+        "updatedAt": "2023-11-11T15:00:00.000Z"
+    },
+    {
+        "requestId": "req-77cd56klmn",
+        "requesterId": "usr_999_manager_charlie",
+        "requesterRole": "MANAGER",
+        "projectId": "proj_202",
+        "requestType": "role_change",
+        "targetEntityId": "usr_777_member_alice",
+        "currentStatus": "approved",
+        "approvalLevel": "admin",
+        "approverId": "usr_000_admin_boss",
+        "reason": "Alice is shifting to Team Lead. Needs Manager privileges.",
+        "comments": "Approved. Please ensure access logs are updated.",
+        "createdAt": "2023-10-01T09:15:00.000Z",
+        "updatedAt": "2023-10-02T10:05:00.000Z"
+    },
+    {
+        "requestId": "req-66de78opqr",
+        "requesterId": "usr_777_member_alice",
+        "requesterRole": "MEMBER",
+        "projectId": "proj_202",
+        "requestType": "remove_user",
+        "targetEntityId": "usr_111_rogue_dev",
+        "currentStatus": "rejected",
+        "approvalLevel": "admin",
+        "approverId": "usr_000_admin_boss",
+        "reason": "Rogue Dev is pushing broken code to master.",
+        "comments": "Rejected. Members cannot request team ejections. Escalate to HR.",
+        "createdAt": "2023-10-15T11:00:00.000Z",
+        "updatedAt": "2023-10-15T16:30:00.000Z"
+    }
+]

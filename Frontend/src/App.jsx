@@ -12,6 +12,7 @@ import NotFound from './pages/NotFound.jsx';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AuditLogDashboard from './pages/AuditLog/AuditLogDashboard.jsx';
 
 // Mock ObjectIds for references
 const u1 = '60d5ecb8b392d7001534f5a1';
@@ -82,6 +83,7 @@ const App = () => {
           <Route path="/teams" element={<ProtectedRoute><Teams teams={teams} setTeams={setTeams} /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/audit-logs" element={<ProtectedRoute><AuditLogDashboard /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>

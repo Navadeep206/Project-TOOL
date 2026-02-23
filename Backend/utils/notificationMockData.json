@@ -1,0 +1,87 @@
+[
+    {
+        "_id": "651b3c4d5e6f7a8b9c0d1e1f",
+        "recipientId": "usr_navadeep_01",
+        "senderId": null,
+        "type": "deadline_approaching",
+        "message": "The deadline for 'Project Phoenix API' is approaching in 24 hours.",
+        "metadata": {
+            "projectId": "proj_phoenix",
+            "taskId": "task_api_auth"
+        },
+        "isRead": false,
+        "createdAt": "2023-11-20T10:00:00.000Z",
+        "updatedAt": "2023-11-20T10:00:00.000Z",
+        "sender": null
+    },
+    {
+        "_id": "651b3c4d5e6f7a8b9c0d2f2g",
+        "recipientId": "usr_navadeep_01",
+        "senderId": "usr_sarah_manager",
+        "type": "task_assigned",
+        "message": "Sarah Jenkins assigned you to 'Create Database Schemas'.",
+        "metadata": {
+            "projectId": "proj_phoenix",
+            "taskId": "task_db_schema"
+        },
+        "isRead": false,
+        "createdAt": "2023-11-20T09:15:00.000Z",
+        "updatedAt": "2023-11-20T09:15:00.000Z",
+        "sender": {
+            "fullname": "Sarah Jenkins",
+            "profileImage": "https://i.pravatar.cc/150?u=sarah"
+        }
+    },
+    {
+        "_id": "651b3c4d5e6f7a8b9c0d3h3i",
+        "recipientId": "usr_navadeep_01",
+        "senderId": "usr_david_lead",
+        "type": "status_changed",
+        "message": "David Lee changed the status of 'Frontend UI' to In Progress.",
+        "metadata": {
+            "projectId": "proj_phoenix",
+            "newStatus": "In Progress"
+        },
+        "isRead": true,
+        "createdAt": "2023-11-19T14:30:00.000Z",
+        "updatedAt": "2023-11-19T15:00:00.000Z",
+        "sender": {
+            "fullname": "David Lee",
+            "profileImage": "https://i.pravatar.cc/150?u=david"
+        }
+    },
+    {
+        "_id": "651b3c4d5e6f7a8b9c0d4j4k",
+        "recipientId": "usr_navadeep_01",
+        "senderId": "usr_admin_system",
+        "type": "role_update",
+        "message": "Your account role has been updated to MANAGER.",
+        "metadata": {
+            "newRole": "MANAGER"
+        },
+        "isRead": true,
+        "createdAt": "2023-11-18T09:00:00.000Z",
+        "updatedAt": "2023-11-18T10:05:00.000Z",
+        "sender": {
+            "fullname": "System Admin",
+            "profileImage": null
+        }
+    },
+    {
+        "_id": "651b3c4d5e6f7a8b9c0d5l5m",
+        "recipientId": "usr_navadeep_01",
+        "senderId": "usr_sarah_manager",
+        "type": "comment_added",
+        "message": "Sarah Jenkins replied: 'Looks good, but check the JWT expiry limit.'",
+        "metadata": {
+            "taskId": "task_api_auth"
+        },
+        "isRead": true,
+        "createdAt": "2023-11-17T11:00:00.000Z",
+        "updatedAt": "2023-11-17T16:30:00.000Z",
+        "sender": {
+            "fullname": "Sarah Jenkins",
+            "profileImage": "https://i.pravatar.cc/150?u=sarah"
+        }
+    }
+]

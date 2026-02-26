@@ -1,40 +1,66 @@
 import React, { useState, useEffect } from 'react';
-import { notificationsMock } from '../../components/NotificationDropdown/mockData';
+import axios from 'axios';
 import NotificationItem from '../../components/NotificationDropdown/NotificationItem';
 
 /**
  * NotificationPage
- * Full Standalone UI view of all user notifications with simulated pagination.
+ * Full Standalone UI view of all user notifications, powered by actual APIs natively.
  */
 const NotificationPage = () => {
     const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread'
     const [notifications, setNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Simulated Fetch
+    // Fetch from Backend
     useEffect(() => {
-        setIsLoading(true);
-        // Fake 600ms network delay
-        setTimeout(() => {
-            setNotifications(notificationsMock);
-            setIsLoading(false);
-        }, 600);
+        const fetchNotifications = async () => {
+            setIsLoading(true);
+            try {
+                // Fetching up to 50 for the full page view natively
+                const response = await axios.get('http://localhost:5050/api/v1/notifications', {
+                    params: { limit: 50 },
+                    withCredentials: true
+                });
+                setNotifications(response.data.data.notifications || []);
+            } catch (error) {
+                console.error("Failed to fetch page notifications", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchNotifications();
     }, []);
 
-    const handleMarkAsRead = (e, id) => {
+    const handleMarkAsRead = async (e, id) => {
         e.stopPropagation();
-        setNotifications(prev => prev.map(n =>
-            n._id === id ? { ...n, isRead: true } : n
-        ));
+        try {
+            await axios.patch(`http://localhost:5050/api/v1/notifications/${id}/read`, {}, { withCredentials: true });
+            setNotifications(prev => prev.map(n =>
+                n._id === id ? { ...n, isRead: true } : n
+            ));
+        } catch (error) {
+            console.error("Mark read error:", error);
+        }
     };
 
-    const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    const handleMarkAllAsRead = async () => {
+        try {
+            await axios.patch('http://localhost:5050/api/v1/notifications/read-all', {}, { withCredentials: true });
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (error) {
+            console.error("Mark all read error:", error);
+        }
     };
 
-    const handleDelete = (e, id) => {
+    const handleDelete = async (e, id) => {
         e.stopPropagation();
-        setNotifications(prev => prev.filter(n => n._id !== id));
+        try {
+            await axios.delete(`http://localhost:5050/api/v1/notifications/${id}`, { withCredentials: true });
+            setNotifications(prev => prev.filter(n => n._id !== id));
+        } catch (error) {
+            console.error("Delete error:", error);
+        }
     };
 
     // Group notifications chronologically (simulated logic for "Today", "Yesterday")

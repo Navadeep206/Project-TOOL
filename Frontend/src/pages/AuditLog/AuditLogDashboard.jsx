@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MOCK_AUDIT_LOGS } from './mockData';
+import axios from 'axios';
 import { AuditFilters } from './components/AuditFilters';
 import { LogsTable } from './components/LogsTable';
 import { SkeletonTable, EmptyState, ErrorState } from './components/UIStates';
@@ -19,24 +19,27 @@ export default function AuditLogDashboard() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8; // Adjust for UI preference
 
-    // Mock fetch effect
+    // Fetch Audit Logs from Backend
     useEffect(() => {
-        const fetchMockData = () => {
+        const fetchLogs = async () => {
             setIsLoading(true);
             setError(null);
-            // Simulate network delay
-            setTimeout(() => {
-                try {
-                    setLogs(MOCK_AUDIT_LOGS);
-                    setIsLoading(false);
-                } catch (err) {
-                    setError("Failed to fetch mock data.");
-                    setIsLoading(false);
-                }
-            }, 800);
+            try {
+                // Fetching all for client-side pagination/filtering demonstration
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/audit-logs`, {
+                    withCredentials: true // Attach JWT
+                });
+
+                setLogs(response.data.data || []);
+                setIsLoading(false);
+            } catch (err) {
+                console.error("Audit log network error:", err);
+                setError("Failed to fetch audit logs from the backend.");
+                setIsLoading(false);
+            }
         };
 
-        fetchMockData();
+        fetchLogs();
     }, []);
 
     // Filter Logic (Client-side since we are fully standalone/mocked)
@@ -79,12 +82,12 @@ export default function AuditLogDashboard() {
                     </div>
                     <button
                         className="inline-flex items-center px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 font-mono text-sm transition-all uppercase tracking-wider rounded-sm focus:outline-none focus:border-purple-500"
-                        onClick={() => alert("As per constraints, Export is disabled in mock mode. Backend provides a CSV/JSON endpoint.")}
+                        onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/audit-logs/export?format=csv`, '_blank')}
                     >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        Export Logs
+                        Export CSV
                     </button>
                 </div>
 

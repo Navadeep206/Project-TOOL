@@ -1,21 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext.jsx';
+import { ROLES } from '../constants/roles.js';
 
 const Projects = ({ projects, setProjects }) => {
+    const { user } = useAuth();
+    const isMember = user?.role === ROLES.MEMBER;
     const [showModal, setShowModal] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectPriority, setNewProjectPriority] = useState('Medium');
     const [newProjectDescription, setNewProjectDescription] = useState('');
 
-    // Generate a fake ObjectId
-    const generateObjectId = () => {
-        const timestamp = (Math.floor(new Date().getTime() / 1000)).toString(16);
-        return timestamp + "xxxxxxxxxxxxxxxx".replace(/[x]/g, () => (
-            Math.floor(Math.random() * 16).toString(16)
-        )).toLowerCase();
-    };
-
     // Simple function to add project
-    const addProject = (e) => {
+    const addProject = async (e) => {
         e.preventDefault();
 
         if (!newProjectName || newProjectName.trim() === '') {
@@ -24,26 +21,39 @@ const Projects = ({ projects, setProjects }) => {
         }
 
         const newProj = {
-            _id: generateObjectId(),
             name: newProjectName.trim(),
             description: newProjectDescription.trim(),
             priority: newProjectPriority,
             status: 'Planning',
             dueDate: new Date().toISOString(), // Mocking current date as due date for now
-            createdBy: '60d5ecb8b392d7001534f5a1' // Mocking logged in user Admin
+            createdBy: user?._id || user?.id // Assigning actual user
         };
 
-        setProjects([...projects, newProj]);
-        setNewProjectName('');
-        setNewProjectDescription('');
-        setNewProjectPriority('Medium');
-        setShowModal(false);
+        try {
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/projects`, newProj, { withCredentials: true });
+            setProjects([...projects, res.data]);
+            setNewProjectName('');
+            setNewProjectDescription('');
+            setNewProjectPriority('Medium');
+            setShowModal(false);
+        } catch (error) {
+            console.error("Failed to post project:", error);
+            alert("Error creating project. Ensure you have the right permissions.");
+        }
     };
 
     // Delete project
-    const deleteProject = (id) => {
-        setProjects(projects.filter(p => p._id !== id));
+    const deleteProject = async (id) => {
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/projects/${id}`, { withCredentials: true });
+            setProjects(projects.filter(p => p._id !== id));
+        } catch (error) {
+            console.error("Failed to delete project:", error);
+            alert("Error deleting project. Ensure you are the owner or an Admin.");
+        }
     };
+
+    // Priority styling helper
 
     const getPriorityColor = (priority) => {
         if (priority === 'High') {
@@ -82,12 +92,14 @@ const Projects = ({ projects, setProjects }) => {
                         <h2 className="text-xl font-bold text-zinc-100 uppercase tracking-wide flex items-center gap-2">
                             <span className="w-2 h-2 bg-blue-500 rounded-sm inline-block"></span> Deployment Roster
                         </h2>
-                        <button
-                            onClick={() => setShowModal(!showModal)}
-                            className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-sm hover:bg-zinc-700 hover:text-white font-mono text-sm transition-all"
-                        >
-                            + ADD_PROJ
-                        </button>
+                        {!isMember && (
+                            <button
+                                onClick={() => setShowModal(!showModal)}
+                                className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-sm hover:bg-zinc-700 hover:text-white font-mono text-sm transition-all"
+                            >
+                                + ADD_PROJ
+                            </button>
+                        )}
                     </div>
 
                     <div className="p-6">
@@ -151,13 +163,15 @@ const Projects = ({ projects, setProjects }) => {
                                         <div>
                                             <div className="flex justify-between items-start mb-4">
                                                 <h3 className="text-xl font-bold text-zinc-200 group-hover:text-amber-400 transition-colors truncate pr-2">{proj.name}</h3>
-                                                <button
-                                                    onClick={() => deleteProject(proj._id)}
-                                                    className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
-                                                    title="Terminate"
-                                                >
-                                                    ✕
-                                                </button>
+                                                {!isMember && (
+                                                    <button
+                                                        onClick={() => deleteProject(proj._id)}
+                                                        className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
+                                                        title="Terminate"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
                                             </div>
                                             {proj.description && (
                                                 <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{proj.description}</p>
@@ -172,7 +186,7 @@ const Projects = ({ projects, setProjects }) => {
                                             </div>
                                         </div>
                                         <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-between items-center text-xs text-zinc-500 font-mono">
-                                            <span className="truncate w-24" title={proj._id}>ID: {...proj._id.substring(18)}</span>
+                                            <span className="truncate w-24" title={proj._id}>ID: ...{proj._id.substring(18)}</span>
                                             <span>ETA: {new Date(proj.dueDate).toLocaleDateString()}</span>
                                         </div>
                                     </div>

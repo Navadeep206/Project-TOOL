@@ -1,8 +1,19 @@
 import Project from '../models/projectModel.js';
+import Task from '../models/taskModel.js';
+import { ROLES } from '../constants/roles.js';
 
 export const getProjects = async (req, res) => {
     try {
-        const projects = await Project.find();
+        let query = {};
+
+        // isolation: Members only see projects they have tasks in
+        if (req.user && req.user.role === ROLES.MEMBER) {
+            const memberTasks = await Task.find({ assignedTo: req.user.id }).select('project');
+            const projectIds = memberTasks.map(t => t.project);
+            query = { _id: { $in: projectIds } };
+        }
+
+        const projects = await Project.find(query);
         res.status(200).json(projects);
     } catch (error) {
         res.status(500).json({ message: error.message });

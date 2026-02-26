@@ -37,6 +37,18 @@ const Navbar = () => {
                         <li><Link to="/projects" className={getLinkClass('/projects')}>[ Projects ]</Link></li>
                         <li><Link to="/tasks" className={getLinkClass('/tasks')}>[ Tasks ]</Link></li>
                         <li><Link to="/teams" className={getLinkClass('/teams')}>[ Teams ]</Link></li>
+
+                        {/* Restricted: Admin & Manager Only */}
+                        {(user.role === 'admin' || user.role === 'manager') && (
+                            <li><Link to="/approvals" className={getLinkClass('/approvals')}>[ Approvals ]</Link></li>
+                        )}
+
+                        <li><Link to="/notifications" className={getLinkClass('/notifications')}>[ Alerts ]</Link></li>
+
+                        {/* Restricted: Admin Only */}
+                        {user.role === 'admin' && (
+                            <li><Link to="/audit-logs" className={getLinkClass('/audit-logs')}>[ Logs ]</Link></li>
+                        )}
                     </ul>
                 )}
 

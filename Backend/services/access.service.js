@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import User from '../models/user.model.js'; // Adjust path to actual User model
+import User from '../models/userModel.js';
 
 /**
  * Access Management Service

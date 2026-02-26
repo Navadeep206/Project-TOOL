@@ -23,7 +23,11 @@ export const protect = async (req, res, next) => {
 
     try {
         // Verify token
-        const secret = process.env.JWT_SECRET || 'fallback_secret';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            console.error('CRITICAL: JWT_SECRET is not defined in environment variables');
+            return res.status(500).json({ message: 'Internal server error: Security configuration missing' });
+        }
         const decoded = jwt.verify(token, secret);
 
         // Fetch user from DB, excluding password

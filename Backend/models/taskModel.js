@@ -7,6 +7,8 @@ const taskSchema = new mongoose.Schema({
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
     team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    assignedToName: { type: String, trim: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 export default mongoose.model('Task', taskSchema);

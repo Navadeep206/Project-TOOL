@@ -1,5 +1,5 @@
 import { accessService } from '../services/access.service.js';
-import User from '../models/user.model.js'; // Adjust this path logically to where your User model is located
+import User from '../models/userModel.js';
 
 /**
  * Access Controller

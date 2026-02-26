@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { notificationsMock } from './mockData';
+import axios from 'axios';
 import NotificationItem from './NotificationItem';
 
 /**
  * NotificationDropdown
  * A completely decoupled, standalone UI module for Global Navbars.
+ * Now connected to real backend APIs via Axios.
  */
 const NotificationDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState(notificationsMock);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
 
     // Close dropdown when clicking outside
@@ -22,19 +24,49 @@ const NotificationDropdown = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    // Fetch notifications from Backend on mount
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const response = await axios.get('http://localhost:5050/api/v1/notifications', {
+                    params: { limit: 10 },
+                    withCredentials: true
+                });
+                setNotifications(response.data.data.notifications || []);
+                setUnreadCount(response.data.data.unreadCount || 0);
+            } catch (error) {
+                console.error("Notifications fetch error:", error);
+            }
+        };
 
-    // Simulate API Call payload: PATCH /api/v1/notifications/:id/read
-    const handleMarkAsRead = (e, id) => {
+        fetchNotifications();
+    }, []);
+
+    // API Call payload: PATCH /api/v1/notifications/:id/read
+    const handleMarkAsRead = async (e, id) => {
         e.stopPropagation(); // Don't trigger outer link clicks
-        setNotifications(prev => prev.map(n =>
-            n._id === id ? { ...n, isRead: true } : n
-        ));
+        try {
+            await axios.patch(`http://localhost:5050/api/v1/notifications/${id}/read`, {}, { withCredentials: true });
+
+            // Optimistic UI Update
+            setNotifications(prev => prev.map(n =>
+                n._id === id ? { ...n, isRead: true } : n
+            ));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error("Failed to mark as read", error);
+        }
     };
 
-    // Simulate API Call payload: PATCH /api/v1/notifications/read-all
-    const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    // API Call payload: PATCH /api/v1/notifications/read-all
+    const handleMarkAllAsRead = async () => {
+        try {
+            await axios.patch('http://localhost:5050/api/v1/notifications/read-all', {}, { withCredentials: true });
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            setUnreadCount(0);
+        } catch (error) {
+            console.error("Failed to mark all as read", error);
+        }
     };
 
     return (

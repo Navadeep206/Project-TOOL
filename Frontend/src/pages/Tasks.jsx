@@ -1,48 +1,70 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext.jsx';
+import { ROLES } from '../constants/roles.js';
 
-const Tasks = ({ tasks, setTasks, teams }) => {
+const Tasks = ({ teams, tasks, setTasks, projects }) => {
+    const { user } = useAuth();
+    const isMember = user?.role === ROLES.MEMBER;
     const [showTaskModal, setShowTaskModal] = useState(false);
+
+    // Form States
     const [newTaskName, setNewTaskName] = useState('');
     const [newTaskStatus, setNewTaskStatus] = useState('Pending');
-    const [newTaskTeam, setNewTaskTeam] = useState(teams.length > 0 ? teams[0]._id : '');
-    const [newTaskPerson, setNewTaskPerson] = useState(teams.length > 0 && teams[0].members.length > 0 ? teams[0].members[0].user : 'Unassigned');
+    const [newTaskProject, setNewTaskProject] = useState(projects?.length > 0 ? projects[0]._id : '');
+    const [newTaskTeam, setNewTaskTeam] = useState(teams?.length > 0 ? teams[0]._id : '');
+    const [newTaskPerson, setNewTaskPerson] = useState('Unassigned');
 
-    // Generate a fake ObjectId
-    const generateObjectId = () => {
-        const timestamp = (Math.floor(new Date().getTime() / 1000)).toString(16);
-        return timestamp + "xxxxxxxxxxxxxxxx".replace(/[x]/g, () => (
-            Math.floor(Math.random() * 16).toString(16)
-        )).toLowerCase();
-    };
+    const memberOptionValue = (member) => String(member.user);
+    const getMemberLabel = (member) => member.displayName || member.name || `User: ${member.user.substring(18)}`;
+
+    useEffect(() => {
+        if (projects?.length > 0 && !newTaskProject) {
+            setNewTaskProject(projects[0]._id);
+        }
+    }, [projects, newTaskProject]);
 
     // Derived state for available members based on selected team
     const availableMembers = useMemo(() => {
         const team = teams.find(t => t._id === newTaskTeam);
-        return team ? team.members : [];
+        return team ? (team.members || []).filter((member) => member.user) : [];
     }, [newTaskTeam, teams]);
+
+    useEffect(() => {
+        if (!newTaskTeam || availableMembers.length === 0) {
+            setNewTaskPerson('Unassigned');
+            return;
+        }
+
+        setNewTaskPerson(memberOptionValue(availableMembers[0]));
+    }, [newTaskTeam, availableMembers]);
 
     // Update person when team changes, or fallback
     const handleTeamChange = (e) => {
         const selectedTeamId = e.target.value;
         setNewTaskTeam(selectedTeamId);
-        const team = teams.find(t => t._id === selectedTeamId);
-        if (team && team.members.length > 0) {
-            setNewTaskPerson(team.members[0].user);
-        } else {
-            setNewTaskPerson('Unassigned');
-        }
     };
 
     // Delete task
-    const deleteTask = (id) => {
-        setTasks(tasks.filter(t => t._id !== id));
+    const deleteTask = async (id) => {
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/tasks/${id}`, { withCredentials: true });
+            setTasks(tasks.filter(t => t._id !== id));
+        } catch (error) {
+            console.error("Error deleting task:", error);
+            alert("Error: You do not have permission to delete this task.");
+        }
     };
 
     // Update task status
-    const updateTaskStatus = (id, newStatus) => {
-        setTasks(tasks.map(t =>
-            t._id === id ? { ...t, status: newStatus } : t
-        ));
+    const updateTaskStatus = async (id, newStatus) => {
+        try {
+            const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/tasks/${id}`, { status: newStatus }, { withCredentials: true });
+            setTasks(tasks.map(t => t._id === id ? res.data : t));
+        } catch (error) {
+            console.error("Error updating status:", error);
+            alert(`Error: ${error.response?.data?.message || 'Failed to update status.'}`);
+        }
     };
 
     // Toggle task to completed
@@ -52,7 +74,7 @@ const Tasks = ({ tasks, setTasks, teams }) => {
     };
 
     // Add task
-    const addTask = (e) => {
+    const addTask = async (e) => {
         e.preventDefault();
 
         if (!newTaskName || newTaskName.trim() === '') {
@@ -60,24 +82,44 @@ const Tasks = ({ tasks, setTasks, teams }) => {
             return;
         }
 
+        if (!newTaskProject) {
+            alert('A task must be assigned to an active Project.');
+            return;
+        }
+
         const newTask = {
-            _id: generateObjectId(),
             name: newTaskName.trim(),
             status: newTaskStatus,
-            team: newTaskTeam,
-            assignedTo: newTaskPerson,
-            project: '60d5ecc4f682f50015ea1c61' // Hardcoded default project link for mock
+            project: newTaskProject,
+            createdBy: user?._id || user?.id
         };
 
-        setTasks([...tasks, newTask]);
-        setNewTaskName('');
-        setNewTaskStatus('Pending');
-        // Reset to first team
-        if (teams.length > 0) {
-            setNewTaskTeam(teams[0]._id);
-            setNewTaskPerson(teams[0].members[0]?.user || 'Unassigned');
+        // If user is Admin/Manager, they can enforce assignment. Otherwise, logic delegates.
+        if (user?.role !== ROLES.MEMBER) {
+            newTask.team = newTaskTeam;
+            if (newTaskPerson === 'Unassigned') {
+                newTask.assignedTo = null;
+            } else {
+                newTask.assignedTo = newTaskPerson;
+            }
         }
-        setShowTaskModal(false);
+
+        try {
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tasks`, newTask, { withCredentials: true });
+            setTasks([...tasks, res.data]);
+            setNewTaskName('');
+            setNewTaskStatus('Pending');
+            // Reset fields
+            if (teams?.length > 0 && user?.role !== ROLES.MEMBER) {
+                setNewTaskTeam(teams[0]._id);
+                setNewTaskPerson(teams[0].members[0] ? memberOptionValue(teams[0].members[0]) : 'Unassigned');
+            }
+            if (projects.length > 0) setNewTaskProject(projects[0]._id);
+            setShowTaskModal(false);
+        } catch (error) {
+            console.error("Error creating task:", error);
+            alert(`Error: ${error.response?.data?.message || 'Failed to assign Task'}`);
+        }
     };
 
     const getStatusColor = (status) => {
@@ -107,12 +149,14 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                         <h2 className="text-xl font-bold text-zinc-100 uppercase tracking-wide flex items-center gap-2">
                             <span className="w-2 h-2 bg-emerald-500 rounded-sm inline-block"></span> T_Queue
                         </h2>
-                        <button
-                            onClick={() => setShowTaskModal(!showTaskModal)}
-                            className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-sm hover:bg-zinc-700 hover:text-white font-mono text-sm transition-all"
-                        >
-                            + ADD_TASK
-                        </button>
+                        {!isMember && (
+                            <button
+                                onClick={() => setShowTaskModal(!showTaskModal)}
+                                className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-sm hover:bg-zinc-700 hover:text-white font-mono text-sm transition-all"
+                            >
+                                + ADD_TASK
+                            </button>
+                        )}
                     </div>
 
                     <div className="p-6 flex-1 flex flex-col">
@@ -133,36 +177,60 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 mb-4">
-                                    <div>
-                                        <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Team Unit</label>
-                                        <select
-                                            value={newTaskTeam}
-                                            onChange={handleTeamChange}
-                                            className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
-                                        >
-                                            {teams.map(t => (
-                                                <option key={t._id} value={t._id}>{t.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Operative</label>
-                                        <select
-                                            value={newTaskPerson}
-                                            onChange={(e) => setNewTaskPerson(e.target.value)}
-                                            className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
-                                            disabled={availableMembers.length === 0}
-                                        >
-                                            {availableMembers.map(member => (
-                                                <option key={member.user} value={member.user}>User: ...{member.user.substring(18)}</option>
-                                            ))}
-                                            {availableMembers.length === 0 && (
-                                                <option value="Unassigned">N/A</option>
-                                            )}
-                                        </select>
-                                    </div>
+                                <div className="mb-4">
+                                    <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Project Binding</label>
+                                    <select
+                                        value={newTaskProject}
+                                        onChange={(e) => setNewTaskProject(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
+                                    >
+                                        {projects.map(p => (
+                                            <option key={p._id} value={p._id}>{p.name}</option>
+                                        ))}
+                                        {projects.length === 0 && <option value="">-- No Active Projects --</option>}
+                                    </select>
                                 </div>
+
+                                {!isMember ? (
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div>
+                                            <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Team Unit (Optional)</label>
+                                            <select
+                                                value={newTaskTeam}
+                                                onChange={handleTeamChange}
+                                                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
+                                            >
+                                                <option value="">-- Unassigned --</option>
+                                                {teams?.map(t => (
+                                                    <option key={t._id} value={t._id}>{t.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Operative (Optional)</label>
+                                            <select
+                                                value={newTaskPerson}
+                                                onChange={(e) => setNewTaskPerson(e.target.value)}
+                                                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
+                                                disabled={!newTaskTeam || availableMembers.length === 0}
+                                            >
+                                                {availableMembers.map(member => (
+                                                    <option key={member._id || member.user || member.displayName} value={memberOptionValue(member)}>
+                                                        {getMemberLabel(member)}
+                                                    </option>
+                                                ))}
+                                                {(!newTaskTeam || availableMembers.length === 0) && (
+                                                    <option value="Unassigned">N/A</option>
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mb-4">
+                                        <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Notice</label>
+                                        <p className="text-zinc-400 text-xs font-mono bg-zinc-900 p-3 border border-zinc-800 rounded-sm">Members cannot assign tasks to Operatives. This task will remain unassigned upon creation.</p>
+                                    </div>
+                                )}
 
                                 <div className="mb-6">
                                     <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Initial Status</label>
@@ -210,17 +278,20 @@ const Tasks = ({ tasks, setTasks, teams }) => {
                                                     {task.name}
                                                 </p>
                                                 <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
-                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.team}>Team: {...task.team.substring(18)}</span>
-                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.assignedTo}>User: {...task.assignedTo?.substring(18)}</span>
+                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.project}>Proj: {task.project?.substring(18) || 'N/A'}</span>
+                                                    {task.team && <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.team}>Team: {task.team.substring(18)}</span>}
+                                                    {task.assignedTo && <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.assignedTo}>User: {task.assignedTo.substring(18)}</span>}
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => deleteTask(task._id)}
-                                                className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
-                                                title="Terminate Task"
-                                            >
-                                                ✕
-                                            </button>
+                                            {!isMember && (
+                                                <button
+                                                    onClick={() => deleteTask(task._id)}
+                                                    className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
+                                                    title="Terminate Task"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="flex justify-between items-center mt-6">
                                             <span className={`text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getStatusColor(task.status)}`}>

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { sampleActivities } from './mockData';
+import axios from 'axios';
 import ActivityItem from './ActivityItem';
 
 /**
  * ActivityTimeline
  * Standalone UI Component for displaying Project Activity History.
- * Uses mock data as requested without connecting to the backend API.
  */
-const ActivityTimeline = () => {
+const ActivityTimeline = ({ projectId = "proj_test_123" }) => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -29,37 +28,38 @@ const ActivityTimeline = () => {
         if (node) observer.current.observe(node);
     }, [loading, hasMore]);
 
-    // Simulate API fetch delay and pagination
+    // Fetch from backend API natively
     useEffect(() => {
-        setLoading(true);
+        const fetchActivities = async () => {
+            setLoading(true);
+            try {
+                // You would pass the actual projectId dynamically in production
+                const response = await axios.get(`http://localhost:5050/api/v1/activities/project/${projectId}`, {
+                    params: { page, limit: 5, actionType: filter === 'all' ? undefined : filter },
+                    withCredentials: true // Include HTTP-Only cookies if leveraging them
+                });
 
-        // Fake 800ms delay to simulate network latency
-        const timer = setTimeout(() => {
-            // Filter the static mock data based on the selected filter
-            const filteredData = filter === 'all'
-                ? sampleActivities
-                : sampleActivities.filter(a => a.actionType === filter);
+                const fetchedActivities = response.data.data.activities || [];
 
-            // Pagination simulation (5 items per page)
-            const limit = 5;
-            const startIndex = (page - 1) * limit;
-            const endIndex = startIndex + limit;
+                if (page === 1) {
+                    setActivities(fetchedActivities);
+                } else {
+                    setActivities(prev => [...prev, ...fetchedActivities]);
+                }
 
-            const pagedData = filteredData.slice(startIndex, endIndex);
+                setHasMore(fetchedActivities.length >= 5);
+            } catch (error) {
+                console.error("Failed to fetch activities:", error);
 
-            // Reset activity list on first page, append on subsequent pages
-            if (page === 1) {
-                setActivities(pagedData);
-            } else {
-                setActivities(prev => [...prev, ...pagedData]);
+                // Fallback softly if the route isn't active right now
+                setHasMore(false);
+            } finally {
+                setLoading(false);
             }
+        };
 
-            setHasMore(endIndex < filteredData.length);
-            setLoading(false);
-        }, 800);
-
-        return () => clearTimeout(timer);
-    }, [page, filter]);
+        fetchActivities();
+    }, [page, filter, projectId]);
 
     const handleFilterChange = (e) => {
         setFilter(e.target.value);

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { ROLES } from "../constants/roles.js";
 
 const userSchema = new mongoose.Schema({
@@ -26,13 +26,33 @@ const userSchema = new mongoose.Schema({
     isBlocked: {
         type: Boolean,
         default: false
+    },
+    // --- TEMPORARY ACCESS SYSTEM FIELDS ---
+    accessType: {
+        type: String,
+        enum: ['permanent', 'temporary'],
+        default: 'permanent',
+        index: true
+    },
+    accessExpiresAt: {
+        type: Date,
+        default: null
+    },
+    grantedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    grantReason: {
+        type: String,
+        maxLength: 500,
+        default: null
     }
 }, {
     timestamps: true
 });
 
 // Index for faster queries
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 userSchema.pre('save', async function (next) {

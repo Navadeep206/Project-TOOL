@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Task from "./taskModel.js";
 
 const projectSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -8,5 +9,12 @@ const projectSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     dueDate: { type: Date }
 }, { timestamps: true });
+
+// Cleanup Tasks when a Project is deleted to prevent orphan records
+projectSchema.post('findOneAndDelete', async function (doc) {
+    if (doc) {
+        await Task.deleteMany({ project: doc._id });
+    }
+});
 
 export default mongoose.model('Project', projectSchema);

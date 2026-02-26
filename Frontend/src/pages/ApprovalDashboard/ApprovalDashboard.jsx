@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
-import { approvalRequestsMock } from './mockData';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import ApprovalItem from './components/ApprovalItem';
 import ApprovalActionModal from './components/ApprovalActionModal';
 
 /**
  * ApprovalDashboard
  * Standalone UI Page for managing Approval Requests.
- * No backend connection, operates entirely on mock data.
+ * Now natively connected to Express APIs via Axios.
  */
 const ApprovalDashboard = () => {
     const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'history'
     const [searchQuery, setSearchQuery] = useState('');
-    const [requests, setRequests] = useState(approvalRequestsMock);
+    const [requests, setRequests] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [actionType, setActionType] = useState(null); // 'approve' | 'reject'
+
+    // Fetch Requests from Backend dynamically based on tabs
+    useEffect(() => {
+        const fetchApprovals = async () => {
+            setIsLoading(true);
+            try {
+                const endpoint = activeTab === 'pending'
+                    ? `${import.meta.env.VITE_API_BASE_URL}/v1/approvals/pending`
+                    : `${import.meta.env.VITE_API_BASE_URL}/v1/approvals/history`;
+
+                const response = await axios.get(endpoint, {
+                    withCredentials: true
+                });
+                setRequests(response.data.data || []);
+            } catch (error) {
+                console.error("Error fetching approvals:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchApprovals();
+    }, [activeTab]);
 
     // Filtering Logic
     const filteredRequests = requests.filter(req => {
@@ -51,22 +74,21 @@ const ApprovalDashboard = () => {
         setActionType(null);
     };
 
-    const handleConfirmAction = (comments) => {
+    const handleConfirmAction = async (comments) => {
         if (!selectedRequest) return;
 
-        // Mutate the local state to simulate backend DB update
-        setRequests(prev => prev.map(req => {
-            if (req.requestId === selectedRequest.requestId) {
-                return {
-                    ...req,
-                    currentStatus: actionType === 'approve' ? 'approved' : 'rejected',
-                    comments: comments,
-                    approverId: "current_user_admin", // Mock simulated login
-                    updatedAt: new Date().toISOString()
-                };
-            }
-            return req;
-        }));
+        try {
+            // Send REST call to backend
+            await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/v1/approvals/${selectedRequest._id}/decide`, {
+                decision: actionType === 'approve' ? 'approved' : 'rejected',
+                comments: comments
+            }, { withCredentials: true });
+
+            // Remove purely from UI sequentially instead of hard reloading
+            setRequests(prev => prev.filter(req => req._id !== selectedRequest._id));
+        } catch (error) {
+            console.error("Action Failed:", error);
+        }
 
         handleCloseModal();
     };

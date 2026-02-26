@@ -20,7 +20,7 @@ const auditLogSchema = new mongoose.Schema(
             type: String,
             required: true,
             index: true,
-            enum: ["project", "task", "user", "auth", "system", "other"],
+            enum: ["project", "task", "user", "auth", "system", "team", "other"],
             default: "other",
         },
         resourceId: {

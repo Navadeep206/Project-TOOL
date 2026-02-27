@@ -12,12 +12,17 @@ const Teams = ({ teams, setTeams }) => {
     const [showTeamModal, setShowTeamModal] = useState(false);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLead, setNewTeamLead] = useState('');
+    const [newTeamProject, setNewTeamProject] = useState('');
+
+    const [projects, setProjects] = useState([]);
 
     // State for New Member Modal
     const [showMemberModal, setShowMemberModal] = useState(false);
     const [activeTeamId, setActiveTeamId] = useState(null);
-    const [newMemberUserId, setNewMemberUserId] = useState('');
-    const [newMemberRole, setNewMemberRole] = useState('');
+    const [newMemberEmail, setNewMemberEmail] = useState('');
+    const [newMemberName, setNewMemberName] = useState('');
+    const [newMemberRole, setNewMemberRole] = useState(ROLES.MEMBER);
+    const [invitationLink, setInvitationLink] = useState(null);
     const [memberEdits, setMemberEdits] = useState({});
 
     const [users, setUsers] = useState([]);
@@ -50,19 +55,25 @@ const Teams = ({ teams, setTeams }) => {
     };
 
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchData = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/users`, { withCredentials: true });
-                setUsers(res.data);
-                if (res.data.length > 0) {
-                    setNewTeamLead(res.data[0]._id);
-                    setNewMemberUserId(res.data[0]._id);
+                const [usersRes, projectsRes] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_BASE_URL}/users`, { withCredentials: true }),
+                    axios.get(`${import.meta.env.VITE_API_BASE_URL}/projects`, { withCredentials: true })
+                ]);
+                setUsers(usersRes.data.data);
+                setProjects(projectsRes.data.data);
+                if (usersRes.data.data.length > 0) {
+                    setNewTeamLead(usersRes.data.data[0]._id);
+                }
+                if (projectsRes.data.data.length > 0) {
+                    setNewTeamProject(projectsRes.data.data[0]._id);
                 }
             } catch (error) {
-                console.error('Failed to fetch users:', error);
+                console.error('Failed to fetch data:', error);
             }
         };
-        fetchUsers();
+        fetchData();
     }, []);
 
     const getStatusColor = (status) => {
@@ -81,6 +92,7 @@ const Teams = ({ teams, setTeams }) => {
 
         const newTeam = {
             name: newTeamName,
+            project: newTeamProject,
             lead: newTeamLead,
             status: 'Operational',
             members: []
@@ -88,7 +100,7 @@ const Teams = ({ teams, setTeams }) => {
 
         try {
             const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/teams`, newTeam, { withCredentials: true });
-            setTeams([...safeTeams, res.data]);
+            setTeams([...safeTeams, res.data.data]);
             setNewTeamName('');
             setNewTeamLead('');
             setShowTeamModal(false);
@@ -111,11 +123,11 @@ const Teams = ({ teams, setTeams }) => {
         });
 
         setActiveTeamId(teamId);
-        setNewMemberRole('');
+        setNewMemberEmail('');
+        setNewMemberName('');
+        setNewMemberRole(ROLES.MEMBER);
+        setInvitationLink(null);
         setMemberEdits(draftEdits);
-        if (users.length > 0) {
-            setNewMemberUserId(users[0]._id);
-        }
         setShowMemberModal(true);
     };
 
@@ -148,7 +160,7 @@ const Teams = ({ teams, setTeams }) => {
             );
 
             const updatedTeams = safeTeams.map((team) => (
-                team._id === activeTeamId ? res.data : team
+                team._id === activeTeamId ? res.data.data : team
             ));
             setTeams(updatedTeams);
             alert('Member updated successfully.');
@@ -160,25 +172,26 @@ const Teams = ({ teams, setTeams }) => {
     const handleAddMember = async (e) => {
         e.preventDefault();
         if (!activeTeamId) return;
-        if (!newMemberRole.trim() || !newMemberUserId.trim()) {
+        if (!newMemberEmail.trim() || !newMemberRole.trim()) {
             alert('Please fill all fields.');
             return;
         }
 
-        const newMember = {
-            user: newMemberUserId,
-            role: newMemberRole,
-            status: 'Active'
-        };
-
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/teams/${activeTeamId}/members`, newMember, { withCredentials: true });
-            const updatedTeams = safeTeams.map(team => team._id === activeTeamId ? res.data : team);
-            setTeams(updatedTeams);
-            setNewMemberUserId(users[0]?._id || '');
-            setNewMemberRole('');
-            setShowMemberModal(false);
-            setActiveTeamId(null);
+            // New Invitations Flow
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/admin/invite`, {
+                email: newMemberEmail,
+                name: newMemberName,
+                role: newMemberRole,
+                projectId: safeTeams.find(t => t._id === activeTeamId)?.project // Optional projectId
+            }, { withCredentials: true });
+
+            if (res.data.data.debugLink || res.data.message) {
+                setInvitationLink(res.data.data.debugLink || 'Invitation sent successfully');
+                setNewMemberEmail('');
+                setNewMemberName('');
+                // Keep modal open to show the link
+            }
         } catch (error) {
             alert(getApiErrorMessage(error));
         }
@@ -240,6 +253,20 @@ const Teams = ({ teams, setTeams }) => {
                                     ))}
                                 </select>
                             </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Project Assignment</label>
+                                <select
+                                    value={newTeamProject}
+                                    onChange={(e) => setNewTeamProject(e.target.value)}
+                                    className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-sm px-4 py-2 focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
+                                    required
+                                >
+                                    {projects.map(p => (
+                                        <option key={p._id} value={p._id}>{p.name}</option>
+                                    ))}
+                                    {projects.length === 0 && <option value="">-- No Active Projects --</option>}
+                                </select>
+                            </div>
                             <div className="md:col-span-2 flex justify-end gap-3 mt-2">
                                 <button
                                     type="button"
@@ -263,45 +290,83 @@ const Teams = ({ teams, setTeams }) => {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
                         <div className="w-full max-w-2xl max-h-[90vh] overflow-auto p-6 bg-zinc-900 border border-zinc-700 rounded-sm border-t-2 border-t-emerald-500">
                             <h3 className="text-sm font-mono text-zinc-400 uppercase tracking-widest mb-4">Register New Operative</h3>
-                            <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-zinc-800 pb-6 mb-6">
-                                <div>
-                                    <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Operative User</label>
-                                    <select
-                                        value={newMemberUserId}
-                                        onChange={(e) => setNewMemberUserId(e.target.value)}
-                                        className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-sm px-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors font-mono appearance-none"
-                                    >
-                                        {users.map(u => (
-                                            <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Role/Classification</label>
-                                    <input
-                                        type="text"
-                                        value={newMemberRole}
-                                        onChange={(e) => setNewMemberRole(e.target.value)}
-                                        className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-sm px-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
-                                        placeholder="Enter Classification..."
-                                    />
-                                </div>
-                                <div className="md:col-span-2 flex justify-end gap-3 mt-2">
+
+                            {invitationLink ? (
+                                <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-800 rounded-sm">
+                                    <p className="text-emerald-400 text-xs font-mono uppercase tracking-widest mb-2">Invitation Link Generated:</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            readOnly
+                                            value={invitationLink}
+                                            className="flex-1 bg-zinc-950 border border-zinc-800 text-emerald-500 font-mono text-xs p-2 rounded-sm"
+                                        />
+                                        <button
+                                            onClick={() => { navigator.clipboard.writeText(invitationLink); alert('Copied to clipboard'); }}
+                                            className="bg-emerald-600 text-black px-3 py-1 rounded-sm text-[10px] font-bold uppercase"
+                                        >
+                                            Copy
+                                        </button>
+                                    </div>
                                     <button
-                                        type="button"
-                                        onClick={() => { setShowMemberModal(false); setActiveTeamId(null); }}
-                                        className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-4 py-2 rounded-sm hover:bg-zinc-700 font-bold uppercase tracking-wider text-sm transition-colors"
+                                        onClick={() => setInvitationLink(null)}
+                                        className="mt-4 text-zinc-500 text-[10px] uppercase font-mono hover:text-zinc-300"
                                     >
-                                        Abort
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="bg-emerald-600 text-black px-4 py-2 rounded-sm hover:bg-emerald-500 font-bold uppercase tracking-wider text-sm transition-colors"
-                                    >
-                                        Register
+                                        [ Create Another Invitation ]
                                     </button>
                                 </div>
-                            </form>
+                            ) : (
+                                <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-zinc-800 pb-6 mb-6">
+                                    <div>
+                                        <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Operative Identity (Name)</label>
+                                        <input
+                                            type="text"
+                                            value={newMemberName}
+                                            onChange={(e) => setNewMemberName(e.target.value)}
+                                            className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-sm px-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                                            placeholder="Enter Designation..."
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Operative Email</label>
+                                        <input
+                                            type="email"
+                                            value={newMemberEmail}
+                                            onChange={(e) => setNewMemberEmail(e.target.value)}
+                                            className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-sm px-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                                            placeholder="operative@domain.core"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Role/Classification</label>
+                                        <select
+                                            value={newMemberRole}
+                                            onChange={(e) => setNewMemberRole(e.target.value)}
+                                            className="w-full bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-sm px-4 py-2 focus:outline-none focus:border-emerald-500 transition-colors font-mono appearance-none"
+                                        >
+                                            {Object.values(ROLES).map(role => (
+                                                <option key={role} value={role}>{role.toUpperCase()}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2 flex justify-end gap-3 mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setShowMemberModal(false); setActiveTeamId(null); }}
+                                            className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-4 py-2 rounded-sm hover:bg-zinc-700 font-bold uppercase tracking-wider text-sm transition-colors"
+                                        >
+                                            Abort
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="bg-emerald-600 text-black px-4 py-2 rounded-sm hover:bg-emerald-500 font-bold uppercase tracking-wider text-sm transition-colors"
+                                        >
+                                            Send Invite
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
 
                             <div>
                                 <h4 className="text-sm font-mono text-zinc-400 uppercase tracking-widest mb-4">Manage Existing Operatives</h4>

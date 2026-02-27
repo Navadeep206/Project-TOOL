@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Task from "./taskModel.js";
+import Team from "./teamModel.js";
 
 const projectSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -14,6 +15,7 @@ const projectSchema = new mongoose.Schema({
 projectSchema.post('findOneAndDelete', async function (doc) {
     if (doc) {
         await Task.deleteMany({ project: doc._id });
+        await Team.deleteMany({ project: doc._id });
     }
 });
 

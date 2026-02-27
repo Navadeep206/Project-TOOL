@@ -1,4 +1,5 @@
 import { createUser, loginUser, deleteUser, getUsers } from '../controllers/userController.js';
+import { acceptInvite, verifyInvite } from '../controllers/invitationController.js';
 import express from 'express';
 import { auditAction, auditAuthError } from '../middleware/auditMiddleware.js';
 
@@ -11,6 +12,8 @@ userRoute.get('/', getUsers);
 userRoute.post('/', auditAction('USER_REGISTRATION', 'user'), createUser);
 userRoute.post('/login', loginUser);
 userRoute.post('/register', auditAction('USER_REGISTRATION', 'user'), createUser);
+userRoute.post('/accept-invite', auditAction('USER_INVITE_ACCEPTANCE', 'user'), acceptInvite);
+userRoute.get('/verify-invite/:token', verifyInvite);
 userRoute.delete('/:id', auditAction('DELETE_USER', 'user'), deleteUser);
 
 export default userRoute;

@@ -16,7 +16,25 @@ export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Setup global interceptor for 401s
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response?.status === 401) {
+                    setUser(null);
+                    localStorage.removeItem('sys_auth_user');
+                    // Only redirect if we're not already on login/register/accept-invite
+                    const publicPages = ['/login', '/register', '/accept-invite', '/'];
+                    if (!publicPages.includes(window.location.pathname)) {
+                        window.location.href = '/login';
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+
         setLoading(false);
+        return () => axios.interceptors.response.eject(interceptor);
     }, []);
 
     const login = async (email, password) => {
@@ -28,13 +46,13 @@ export const AuthProvider = ({ children }) => {
                 withCredentials: true
             });
 
-            if (response.data) {
+            if (response.data && response.data.data) {
                 const userData = {
-                    id: response.data.id,
-                    email: response.data.email,
-                    name: response.data.name,
-                    role: response.data.role,
-                    accessType: response.data.accessType
+                    id: response.data.data.id,
+                    email: response.data.data.email,
+                    name: response.data.data.name,
+                    role: response.data.data.role,
+                    accessType: response.data.data.accessType
                 };
                 setUser(userData);
                 localStorage.setItem('sys_auth_user', JSON.stringify(userData));

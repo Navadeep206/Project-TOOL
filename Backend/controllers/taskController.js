@@ -12,9 +12,9 @@ export const getTasks = async (req, res) => {
         }
 
         const tasks = await Task.find(query);
-        res.status(200).json(tasks);
+        res.status(200).json({ success: true, count: tasks.length, data: tasks });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -34,9 +34,9 @@ export const createTask = async (req, res) => {
             });
         }
 
-        res.status(201).json(savedTask);
+        res.status(201).json({ success: true, data: savedTask });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -52,7 +52,7 @@ export const updateTask = async (req, res) => {
         );
 
         if (!updatedTask) {
-            return res.status(404).json({ message: "Task not found" });
+            return res.status(404).json({ success: false, message: "Task not found" });
         }
 
         // Trigger Notification if assignment changed
@@ -66,9 +66,9 @@ export const updateTask = async (req, res) => {
             });
         }
 
-        res.status(200).json(updatedTask);
+        res.status(200).json({ success: true, data: updatedTask });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -77,10 +77,10 @@ export const deleteTask = async (req, res) => {
         const { id } = req.params;
         const task = await Task.findByIdAndDelete(id);
         if (!task) {
-            return res.status(404).json({ message: "Task not found" });
+            return res.status(404).json({ success: false, message: "Task not found" });
         }
-        res.status(200).json({ message: "Task deleted successfully" });
+        res.status(200).json({ success: true, message: "Task deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };

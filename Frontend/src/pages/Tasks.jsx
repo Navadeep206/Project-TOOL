@@ -24,20 +24,40 @@ const Tasks = ({ teams, tasks, setTasks, projects }) => {
         }
     }, [projects, newTaskProject]);
 
+    // Derived state for available teams based on selected project
+    const availableTeams = useMemo(() => {
+        if (!newTaskProject) return [];
+        return teams.filter(t => t.project?._id === newTaskProject || t.project === newTaskProject);
+    }, [newTaskProject, teams]);
+
     // Derived state for available members based on selected team
     const availableMembers = useMemo(() => {
-        const team = teams.find(t => t._id === newTaskTeam);
+        const team = availableTeams.find(t => t._id === newTaskTeam);
         return team ? (team.members || []).filter((member) => member.user) : [];
-    }, [newTaskTeam, teams]);
+    }, [newTaskTeam, availableTeams]);
+
+    // Sync team and person defaults when available teams/members change
+    useEffect(() => {
+        if (availableTeams.length > 0) {
+            if (!newTaskTeam || !availableTeams.some(t => t._id === newTaskTeam)) {
+                setNewTaskTeam(availableTeams[0]._id);
+            }
+        } else {
+            if (newTaskTeam !== '') setNewTaskTeam('');
+        }
+    }, [availableTeams, newTaskTeam]);
 
     useEffect(() => {
         if (!newTaskTeam || availableMembers.length === 0) {
-            setNewTaskPerson('Unassigned');
+            if (newTaskPerson !== 'Unassigned') setNewTaskPerson('Unassigned');
             return;
         }
 
-        setNewTaskPerson(memberOptionValue(availableMembers[0]));
-    }, [newTaskTeam, availableMembers]);
+        const firstMemberValue = memberOptionValue(availableMembers[0]);
+        if (newTaskPerson !== firstMemberValue) {
+            setNewTaskPerson(firstMemberValue);
+        }
+    }, [newTaskTeam, availableMembers, newTaskPerson]);
 
     // Update person when team changes, or fallback
     const handleTeamChange = (e) => {
@@ -60,7 +80,8 @@ const Tasks = ({ teams, tasks, setTasks, projects }) => {
     const updateTaskStatus = async (id, newStatus) => {
         try {
             const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/tasks/${id}`, { status: newStatus }, { withCredentials: true });
-            setTasks(tasks.map(t => t._id === id ? res.data : t));
+            // Standardized: res.data.data contains the task
+            setTasks(tasks.map(t => t._id === id ? res.data.data : t));
         } catch (error) {
             console.error("Error updating status:", error);
             alert(`Error: ${error.response?.data?.message || 'Failed to update status.'}`);
@@ -106,15 +127,10 @@ const Tasks = ({ teams, tasks, setTasks, projects }) => {
 
         try {
             const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tasks`, newTask, { withCredentials: true });
-            setTasks([...tasks, res.data]);
+            // Standardized: res.data.data contains the task
+            setTasks([...tasks, res.data.data]);
             setNewTaskName('');
             setNewTaskStatus('Pending');
-            // Reset fields
-            if (teams?.length > 0 && user?.role !== ROLES.MEMBER) {
-                setNewTaskTeam(teams[0]._id);
-                setNewTaskPerson(teams[0].members[0] ? memberOptionValue(teams[0].members[0]) : 'Unassigned');
-            }
-            if (projects.length > 0) setNewTaskProject(projects[0]._id);
             setShowTaskModal(false);
         } catch (error) {
             console.error("Error creating task:", error);
@@ -201,9 +217,10 @@ const Tasks = ({ teams, tasks, setTasks, projects }) => {
                                                 className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono appearance-none"
                                             >
                                                 <option value="">-- Unassigned --</option>
-                                                {teams?.map(t => (
+                                                {availableTeams?.map(t => (
                                                     <option key={t._id} value={t._id}>{t.name}</option>
                                                 ))}
+                                                {availableTeams.length === 0 && <option value="">No Teams in Project</option>}
                                             </select>
                                         </div>
                                         <div>

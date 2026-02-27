@@ -28,7 +28,7 @@ const NotificationDropdown = () => {
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
-                const response = await axios.get('http://localhost:5050/api/v1/notifications', {
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications`, {
                     params: { limit: 10 },
                     withCredentials: true
                 });
@@ -46,7 +46,7 @@ const NotificationDropdown = () => {
     const handleMarkAsRead = async (e, id) => {
         e.stopPropagation(); // Don't trigger outer link clicks
         try {
-            await axios.patch(`http://localhost:5050/api/v1/notifications/${id}/read`, {}, { withCredentials: true });
+            await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications/${id}/read`, {}, { withCredentials: true });
 
             // Optimistic UI Update
             setNotifications(prev => prev.map(n =>
@@ -61,7 +61,7 @@ const NotificationDropdown = () => {
     // API Call payload: PATCH /api/v1/notifications/read-all
     const handleMarkAllAsRead = async () => {
         try {
-            await axios.patch('http://localhost:5050/api/v1/notifications/read-all', {}, { withCredentials: true });
+            await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications/read-all`, {}, { withCredentials: true });
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
         } catch (error) {

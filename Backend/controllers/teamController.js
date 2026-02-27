@@ -8,23 +8,31 @@ export const getTeams = async (req, res) => {
 
         // isolation: Members only see teams they are part of
         if (req.user && req.user.role === ROLES.MEMBER) {
-            query = { 'members.user': req.user.id };
+            query['members.user'] = req.user.id;
+        }
+
+        // Project context filtering
+        if (req.query.projectId) {
+            query.project = req.query.projectId;
         }
 
         const teams = await Team.find(query);
-        res.status(200).json(teams);
+        res.status(200).json({ success: true, count: teams.length, data: teams });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
 export const createTeam = async (req, res) => {
     try {
+        if (!req.body.project) {
+            return res.status(400).json({ success: false, message: "Project ID is required to create a team unit." });
+        }
         const newTeam = new Team(req.body);
         const savedTeam = await newTeam.save();
-        res.status(201).json(savedTeam);
+        res.status(201).json({ success: true, data: savedTeam });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 export const updateTeam = async (req, res) => {
@@ -36,11 +44,11 @@ export const updateTeam = async (req, res) => {
             { new: true, runValidators: true }
         );
         if (!updatedTeam) {
-            return res.status(404).json({ message: "Team not found" });
+            return res.status(404).json({ success: false, message: "Team not found" });
         }
-        res.status(200).json(updatedTeam);
+        res.status(200).json({ success: true, data: updatedTeam });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -50,7 +58,7 @@ export const addMemberToTeam = async (req, res) => {
         const { user, role, status } = req.body;
 
         if (!user || !mongoose.Types.ObjectId.isValid(String(user))) {
-            return res.status(400).json({ message: 'Valid existing user is required.' });
+            return res.status(400).json({ success: false, message: 'Valid existing user is required.' });
         }
 
         const memberPayload = {
@@ -61,14 +69,14 @@ export const addMemberToTeam = async (req, res) => {
 
         const teamDocument = await Team.findById(id);
         if (!teamDocument) {
-            return res.status(404).json({ message: 'Team not found' });
+            return res.status(404).json({ success: false, message: 'Team not found' });
         }
 
         const alreadyMember = teamDocument.members.some(
             (member) => member.user && member.user.toString() === String(user)
         );
         if (alreadyMember) {
-            return res.status(409).json({ message: 'User is already a member of this team.' });
+            return res.status(409).json({ success: false, message: 'User is already a member of this team.' });
         }
 
         const updatedTeam = await Team.findByIdAndUpdate(
@@ -78,12 +86,12 @@ export const addMemberToTeam = async (req, res) => {
         );
 
         if (!updatedTeam) {
-            return res.status(404).json({ message: 'Team not found' });
+            return res.status(404).json({ success: false, message: 'Team not found' });
         }
 
-        res.status(200).json(updatedTeam);
+        res.status(200).json({ success: true, data: updatedTeam });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -115,8 +123,8 @@ export const updateTeamMember = async (req, res) => {
         }
 
         await team.save();
-        res.status(200).json(team);
+        res.status(200).json({ success: true, data: team });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };

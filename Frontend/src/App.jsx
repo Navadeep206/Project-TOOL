@@ -8,6 +8,7 @@ import Projects from './pages/Projects.jsx';
 import Tasks from './pages/Tasks.jsx';
 import Home from './pages/Home.jsx';
 import Teams from './pages/Teams.jsx';
+import AcceptInvite from './pages/AcceptInvite.jsx';
 import Navbar from './components/Navbar.jsx';
 import NotFound from './pages/NotFound.jsx';
 import { Toaster } from 'sonner';
@@ -38,11 +39,16 @@ const AppContent = () => {
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/tasks`, { withCredentials: true })
       ]);
 
-      if (Array.isArray(teamsRes.data)) setTeams(teamsRes.data);
-      if (Array.isArray(projectsRes.data)) setProjects(projectsRes.data);
-      if (Array.isArray(tasksRes.data)) setTasks(tasksRes.data);
+      if (Array.isArray(teamsRes.data.data)) setTeams(teamsRes.data.data);
+      if (Array.isArray(projectsRes.data.data)) setProjects(projectsRes.data.data);
+      if (Array.isArray(tasksRes.data.data)) setTasks(tasksRes.data.data);
     } catch (error) {
       console.error('Data fetch failed:', error);
+      if (error.response?.status === 401) {
+        // Stale session - auto logout
+        localStorage.removeItem('sys_auth_user');
+        window.location.href = '/login';
+      }
     }
   }, [user]);
 
@@ -74,6 +80,7 @@ const AppContent = () => {
         <Route path="/teams" element={<ProtectedRoute><Teams teams={teams} setTeams={setTeams} /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/approvals" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><ApprovalDashboard /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
         <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin']}><AuditLogDashboard /></ProtectedRoute>} />

@@ -3,11 +3,21 @@ import cors from 'cors';
 import "dotenv/config";
 import connectDB from "./config/mongodb.js";
 import cookieParser from "cookie-parser";
+import { errorHandler } from './middleware/errorHandler.js';
+
+// Environment Validation
+const REQUIRED_ENV = ['MONGO_DB_URL', 'JWT_SECRET'];
+REQUIRED_ENV.forEach(key => {
+    if (!process.env[key]) {
+        console.error(`[FATAL] Missing required environment variable: ${key}`);
+        process.exit(1);
+    }
+});
 import userRoute from './routes/userRoute.js';
 import projectRoute from './routes/projectRoute.js';
 import taskRoute from './routes/taskRoute.js';
 import teamRoute from './routes/teamRoute.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import adminRoute from './routes/adminRoute.js';
 import { protect } from './middleware/authMiddleware.js';
 import { authorizeRoles } from './middleware/roleMiddleware.js';
 import { accessExpiryMiddleware } from './middleware/accessExpiryMiddleware.js';
@@ -59,6 +69,7 @@ app.use('/api/users', userRoute);
 app.use('/api/projects', projectRoute);
 app.use('/api/tasks', taskRoute);
 app.use('/api/teams', teamRoute);
+app.use('/api/admin', adminRoute);
 
 // Mount Modular Plugins
 // Apply global expiry middleware alongside protect to ensure Temp Access restrictions apply

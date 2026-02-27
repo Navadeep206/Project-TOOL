@@ -31,7 +31,7 @@ const Projects = ({ projects, setProjects }) => {
 
         try {
             const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/projects`, newProj, { withCredentials: true });
-            setProjects([...projects, res.data]);
+            setProjects([...projects, res.data.data]);
             setNewProjectName('');
             setNewProjectDescription('');
             setNewProjectPriority('Medium');

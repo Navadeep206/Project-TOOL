@@ -17,7 +17,7 @@ const NotificationPage = () => {
             setIsLoading(true);
             try {
                 // Fetching up to 50 for the full page view natively
-                const response = await axios.get('http://localhost:5050/api/v1/notifications', {
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications`, {
                     params: { limit: 50 },
                     withCredentials: true
                 });
@@ -35,7 +35,7 @@ const NotificationPage = () => {
     const handleMarkAsRead = async (e, id) => {
         e.stopPropagation();
         try {
-            await axios.patch(`http://localhost:5050/api/v1/notifications/${id}/read`, {}, { withCredentials: true });
+            await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications/${id}/read`, {}, { withCredentials: true });
             setNotifications(prev => prev.map(n =>
                 n._id === id ? { ...n, isRead: true } : n
             ));
@@ -46,7 +46,7 @@ const NotificationPage = () => {
 
     const handleMarkAllAsRead = async () => {
         try {
-            await axios.patch('http://localhost:5050/api/v1/notifications/read-all', {}, { withCredentials: true });
+            await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications/read-all`, {}, { withCredentials: true });
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         } catch (error) {
             console.error("Mark all read error:", error);
@@ -56,7 +56,7 @@ const NotificationPage = () => {
     const handleDelete = async (e, id) => {
         e.stopPropagation();
         try {
-            await axios.delete(`http://localhost:5050/api/v1/notifications/${id}`, { withCredentials: true });
+            await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/v1/notifications/${id}`, { withCredentials: true });
             setNotifications(prev => prev.filter(n => n._id !== id));
         } catch (error) {
             console.error("Delete error:", error);

@@ -18,23 +18,36 @@ const createUser = async (req, res, next) => {
             });
         }
 
+        // --- INVITATION-BASED ONBOARDING REFACTOR ---
+        // Only allow public registration for the first user (First Admin)
+        const userCount = await User.countDocuments();
+        if (userCount > 0) {
+            return res.status(403).json({
+                message: "Public registration is disabled. Please contact an administrator for an invitation."
+            });
+        }
+
         const user = await User.create({
             name,
             email: normalizedEmail,
-            password
+            password,
+            role: ROLES.ADMIN // First user is always Admin
         });
 
         generateToken(res, user._id, user.role);
         res.status(201).json({
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role
+            success: true,
+            data: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
         });
 
     } catch (err) {
         console.error('Registration Error:', err);
-        res.status(500).json({ message: err.message || "Something went wrong" });
+        res.status(500).json({ success: false, message: err.message || "Something went wrong" });
     }
 
 }
@@ -42,39 +55,44 @@ const createUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
     if (!email || !password) {
-        return res.status(400).json({ message: "Please Enter the credentials" });
+        return res.status(400).json({ success: false, message: "Please Enter the credentials" });
     }
 
     try {
         const normalizedEmail = email.trim().toLowerCase();
-        console.log(`[Login] Attempt for: ${normalizedEmail}`);
+        const logEntry = `[${new Date().toISOString()}] Login Attempt: ${normalizedEmail}\n`;
+        import('fs').then(fs => fs.appendFileSync('auth.log', logEntry));
+
         const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
-            console.log(`[Login] User not found: ${normalizedEmail}`);
-            return res.status(401).json({ message: "Invalid email or password" });
+            import('fs').then(fs => fs.appendFileSync('auth.log', `[${new Date().toISOString()}] User not found: ${normalizedEmail}\n`));
+            return res.status(401).json({ success: false, message: "Invalid email or password" });
         }
 
         let isMatch = await user.matchPassword(password);
-        console.log(`[Login] Password match for ${normalizedEmail}: ${isMatch}`);
+        import('fs').then(fs => fs.appendFileSync('auth.log', `[${new Date().toISOString()}] Password match for ${normalizedEmail}: ${isMatch}\n`));
 
         if (!isMatch) {
-            return res.status(401).json({ message: "Invalid email or password" });
+            return res.status(401).json({ success: false, message: "Invalid email or password" });
         }
 
         generateToken(res, user._id, user.role);
 
         res.status(200).json({
+            success: true,
             message: "User logged in successfully",
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            accessType: user.accessType
+            data: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                accessType: user.accessType
+            }
         });
     } catch (err) {
         console.error('Login Error:', err);
-        res.status(500).json({ message: "Server error during login" });
+        res.status(500).json({ success: false, message: "Server error during login" });
     }
 }
 
@@ -83,22 +101,22 @@ const deleteUser = async (req, res, next) => {
         const userId = req.params.id;
         const user = await User.findByIdAndDelete(userId);
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ success: false, message: "User not found" });
         }
-        res.status(200).json({ message: "User deleted successfully" });
+        res.status(200).json({ success: true, message: "User deleted successfully" });
     } catch (err) {
         console.log(err);
-        res.status(500).json({ message: "Something went wrong" });
+        res.status(500).json({ success: false, message: "Something went wrong" });
     }
 }
 
 const getUsers = async (req, res, next) => {
     try {
         const users = await User.find({}).select('-password');
-        res.status(200).json(users);
+        res.status(200).json({ success: true, count: users.length, data: users });
     } catch (err) {
         console.error('getUsers Error:', err);
-        res.status(500).json({ message: "Server error fetching users" });
+        res.status(500).json({ success: false, message: "Server error fetching users" });
     }
 }
 

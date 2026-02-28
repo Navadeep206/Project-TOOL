@@ -29,6 +29,11 @@ const invitationSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    targetUserId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     token: {
         type: String,
         required: true,
@@ -41,17 +46,17 @@ const invitationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'accepted', 'expired'],
+        enum: ['pending', 'accepted', 'joined', 'rejected', 'expired'],
         default: 'pending'
     }
 }, {
     timestamps: true
 });
 
-// Compound index to prevent multiple pending invites to the same email
-invitationSchema.index({ email: 1, status: 1 }, {
+// Compound index to prevent multiple active invites to the same email for same project
+invitationSchema.index({ email: 1, projectId: 1, status: 1 }, {
     unique: true,
-    partialFilterExpression: { status: 'pending' }
+    partialFilterExpression: { status: { $in: ['pending', 'accepted'] } }
 });
 
 const Invitation = mongoose.model('Invitation', invitationSchema);

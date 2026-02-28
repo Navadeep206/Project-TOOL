@@ -7,10 +7,13 @@ export const getProjects = async (req, res) => {
     try {
         let query = {};
 
-        // isolation: Members only see projects where they are in the associated team
         if (req.user && req.user.role === ROLES.MEMBER) {
-            const memberTeams = await Team.find({ 'members.user': req.user.id }).select('project');
+            console.log(`[DEBUG] Isolation: Fetching projects for Member: ${req.user._id} (${req.user.email})`);
+            const memberTeams = await Team.find({ 'members.user': req.user._id }).select('project');
+            console.log(`[DEBUG] Found ${memberTeams.length} teams for user`);
+
             const projectIds = memberTeams.map(t => t.project).filter(id => id);
+            console.log(`[DEBUG] Associated Project IDs:`, projectIds);
             query = { _id: { $in: projectIds } };
         }
 

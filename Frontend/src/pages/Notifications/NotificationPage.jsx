@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import NotificationItem from '../../components/NotificationDropdown/NotificationItem';
+import { toast } from 'sonner';
 
 /**
  * NotificationPage
@@ -60,6 +61,27 @@ const NotificationPage = () => {
             setNotifications(prev => prev.filter(n => n._id !== id));
         } catch (error) {
             console.error("Delete error:", error);
+        }
+    };
+
+    const handleInviteAction = async (notificationId, action, inviteId) => {
+        try {
+            const endpoint = action === 'join' ? 'join' : 'reject';
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/invitations/${inviteId}/${endpoint}`, {}, { withCredentials: true });
+
+            if (res.data.success) {
+                toast.success(action === 'join' ? 'Joined project successfully!' : 'Invitation declined.');
+                // Mark notification as read and remove from UI locally if it was an invite action
+                setNotifications(prev => prev.filter(n => n._id !== notificationId));
+
+                if (action === 'join') {
+                    // Update global state or refresh
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            }
+        } catch (error) {
+            console.error("Invite action error:", error);
+            toast.error(error.response?.data?.message || "Failed to process invitation");
         }
     };
 
@@ -168,6 +190,7 @@ const NotificationPage = () => {
                                                     <NotificationItem
                                                         notification={notification}
                                                         onMarkRead={handleMarkAsRead}
+                                                        onAction={handleInviteAction}
                                                     />
                                                     {/* Add an extra delete button specifically for the Page view */}
                                                     <button

@@ -2,9 +2,27 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROLES } from '../constants/roles.js';
+import { useTeams, useProjects, useAddTeam, useDeleteTeam, useUpdateMember } from '../hooks/useData.js';
+import { useQuery } from '@tanstack/react-query';
 
-const Teams = ({ teams, setTeams }) => {
+const Teams = () => {
     const { user } = useAuth();
+    const { data: teams = [], isLoading: teamsLoading } = useTeams();
+    const { data: projects = [], isLoading: projectsLoading } = useProjects();
+
+    // For users, simple one-off query for now
+    const { data: users = [], isLoading: usersLoading } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/users`, { withCredentials: true });
+            return res.data.data || [];
+        }
+    });
+
+    const addTeamMutation = useAddTeam();
+    const deleteTeamMutation = useDeleteTeam();
+    const updateMemberMutation = useUpdateMember();
+
     const isMember = user?.role === ROLES.MEMBER;
     const safeTeams = Array.isArray(teams) ? teams : [];
 
@@ -13,8 +31,6 @@ const Teams = ({ teams, setTeams }) => {
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLead, setNewTeamLead] = useState('');
     const [newTeamProject, setNewTeamProject] = useState('');
-
-    const [projects, setProjects] = useState([]);
 
     // State for New Member Modal
     const [showMemberModal, setShowMemberModal] = useState(false);
@@ -25,7 +41,14 @@ const Teams = ({ teams, setTeams }) => {
     const [invitationLink, setInvitationLink] = useState(null);
     const [memberEdits, setMemberEdits] = useState({});
 
-    const [users, setUsers] = useState([]);
+    useEffect(() => {
+        if (users.length > 0 && !newTeamLead) {
+            setNewTeamLead(users[0]._id);
+        }
+        if (projects.length > 0 && !newTeamProject) {
+            setNewTeamProject(projects[0]._id);
+        }
+    }, [users, projects, newTeamLead, newTeamProject]);
 
     const getUserNameById = (userIdOrObj) => {
         if (!userIdOrObj) return 'Unknown';
@@ -54,28 +77,6 @@ const Teams = ({ teams, setTeams }) => {
         return JSON.stringify(data);
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [usersRes, projectsRes] = await Promise.all([
-                    axios.get(`${import.meta.env.VITE_API_BASE_URL}/users`, { withCredentials: true }),
-                    axios.get(`${import.meta.env.VITE_API_BASE_URL}/projects`, { withCredentials: true })
-                ]);
-                setUsers(usersRes.data.data);
-                setProjects(projectsRes.data.data);
-                if (usersRes.data.data.length > 0) {
-                    setNewTeamLead(usersRes.data.data[0]._id);
-                }
-                if (projectsRes.data.data.length > 0) {
-                    setNewTeamProject(projectsRes.data.data[0]._id);
-                }
-            } catch (error) {
-                console.error('Failed to fetch data:', error);
-            }
-        };
-        fetchData();
-    }, []);
-
     const getStatusColor = (status) => {
         if (status === 'Operational' || status === 'Active') {
             return 'text-emerald-400 bg-emerald-900/30 border-emerald-800/50';
@@ -88,7 +89,11 @@ const Teams = ({ teams, setTeams }) => {
 
     const handleAddTeam = async (e) => {
         e.preventDefault();
-        if (!newTeamName.trim() || !newTeamLead.trim()) return;
+
+        if (!newTeamName.trim()) {
+            alert('Unit Designation is required.');
+            return;
+        }
 
         const newTeam = {
             name: newTeamName,
@@ -99,8 +104,7 @@ const Teams = ({ teams, setTeams }) => {
         };
 
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/teams`, newTeam, { withCredentials: true });
-            setTeams([...safeTeams, res.data.data]);
+            await addTeamMutation.mutateAsync(newTeam);
             setNewTeamName('');
             setNewTeamLead('');
             setShowTeamModal(false);
@@ -153,16 +157,11 @@ const Teams = ({ teams, setTeams }) => {
         }
 
         try {
-            const res = await axios.put(
-                `${import.meta.env.VITE_API_BASE_URL}/teams/${activeTeamId}/members/${memberId}`,
-                { displayName: nextName, role: nextRole },
-                { withCredentials: true }
-            );
-
-            const updatedTeams = safeTeams.map((team) => (
-                team._id === activeTeamId ? res.data.data : team
-            ));
-            setTeams(updatedTeams);
+            await updateMemberMutation.mutateAsync({
+                teamId: activeTeamId,
+                memberId,
+                updates: { displayName: nextName, role: nextRole }
+            });
             alert('Member updated successfully.');
         } catch (error) {
             alert(getApiErrorMessage(error));
@@ -178,24 +177,31 @@ const Teams = ({ teams, setTeams }) => {
         }
 
         try {
-            // New Invitations Flow
             const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/admin/invite`, {
                 email: newMemberEmail,
                 name: newMemberName,
                 role: newMemberRole,
-                projectId: safeTeams.find(t => t._id === activeTeamId)?.project // Optional projectId
+                projectId: safeTeams.find(t => t._id === activeTeamId)?.project
             }, { withCredentials: true });
 
             if (res.data.data.debugLink || res.data.message) {
                 setInvitationLink(res.data.data.debugLink || 'Invitation sent successfully');
                 setNewMemberEmail('');
                 setNewMemberName('');
-                // Keep modal open to show the link
             }
         } catch (error) {
             alert(getApiErrorMessage(error));
         }
     };
+
+    const isLoading = teamsLoading || projectsLoading || usersLoading;
+    if (isLoading) {
+        return (
+            <div className="bg-zinc-950 min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-zinc-950 min-h-screen p-6 md:p-8 font-sans text-zinc-300">

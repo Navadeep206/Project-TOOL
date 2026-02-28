@@ -66,11 +66,13 @@ const loginUser = async (req, res, next) => {
         const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
+            console.warn(`[Login] User not found: ${normalizedEmail}`);
             import('fs').then(fs => fs.appendFileSync('auth.log', `[${new Date().toISOString()}] User not found: ${normalizedEmail}\n`));
             return res.status(401).json({ success: false, message: "Invalid email or password" });
         }
 
         let isMatch = await user.matchPassword(password);
+        console.log(`[Login] Password match for ${normalizedEmail}: ${isMatch}`);
         import('fs').then(fs => fs.appendFileSync('auth.log', `[${new Date().toISOString()}] Password match for ${normalizedEmail}: ${isMatch}\n`));
 
         if (!isMatch) {

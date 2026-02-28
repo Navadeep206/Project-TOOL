@@ -6,9 +6,9 @@ export const getTeams = async (req, res) => {
     try {
         let query = {};
 
-        // isolation: Members only see teams they are part of
         if (req.user && req.user.role === ROLES.MEMBER) {
-            query['members.user'] = req.user.id;
+            console.log(`[DEBUG] Isolation: Fetching teams for Member: ${req.user._id} (${req.user.email})`);
+            query['members.user'] = req.user._id;
         }
 
         // Project context filtering
@@ -25,13 +25,17 @@ export const getTeams = async (req, res) => {
 
 export const createTeam = async (req, res) => {
     try {
+        console.log('[DEBUG] createTeam - req.body:', req.body);
         if (!req.body.project) {
+            console.warn('[DEBUG] createTeam - Missing project ID');
             return res.status(400).json({ success: false, message: "Project ID is required to create a team unit." });
         }
         const newTeam = new Team(req.body);
         const savedTeam = await newTeam.save();
+        console.log('[DEBUG] createTeam - Saved:', savedTeam._id);
         res.status(201).json({ success: true, data: savedTeam });
     } catch (error) {
+        console.error('[DEBUG] createTeam - Error:', error);
         res.status(400).json({ success: false, message: error.message });
     }
 };

@@ -59,56 +59,83 @@ const formatTimeAgo = (dateStr) => {
     return `${Math.floor(diff / 86400)}d ago`;
 };
 
-const NotificationItem = ({ notification, onMarkRead }) => {
+const NotificationItem = ({ notification, onMarkRead, onAction }) => {
     const config = getNotificationConfig(notification.type);
-    const { sender, message, createdAt, isRead, _id } = notification;
+    const { sender, message, createdAt, isRead, _id, metadata } = notification;
+
+    const isInvite = metadata?.type === 'PROJECT_INVITE';
 
     return (
         <div
-            className={`group relative flex items-start p-4 hover:bg-slate-800/80 transition-colors cursor-pointer ${!isRead ? 'bg-slate-900' : ''
+            className={`group relative flex flex-col p-4 hover:bg-slate-800/80 transition-colors cursor-pointer ${!isRead ? 'bg-slate-900' : ''
                 }`}
             onClick={(e) => {
                 if (!isRead && onMarkRead) onMarkRead(e, _id);
-                // Handle Routing here optionally utilizing notification.metadata
             }}
         >
-            {/* Unread dot indicator */}
-            {!isRead && (
-                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full" />
-            )}
+            <div className="flex items-start">
+                {/* Unread dot indicator */}
+                {!isRead && (
+                    <div className="absolute left-2.5 top-6 -translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                )}
 
-            {/* Avatar or Icon */}
-            <div className="ml-2 mr-3 mt-1 shrink-0">
-                {sender && sender.profileImage ? (
-                    <img src={sender.profileImage} alt="User avatar" className="w-9 h-9 rounded-full object-cover border border-slate-700" />
-                ) : (
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center border ${config.bgClass}`}>
-                        {config.icon}
-                    </div>
+                {/* Avatar or Icon */}
+                <div className="ml-2 mr-3 mt-1 shrink-0">
+                    {sender && sender.profileImage ? (
+                        <img src={sender.profileImage} alt="User avatar" className="w-9 h-9 rounded-full object-cover border border-slate-700" />
+                    ) : (
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center border ${config.bgClass}`}>
+                            {config.icon}
+                        </div>
+                    )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0 pr-6">
+                    <p className={`text-sm ${!isRead ? 'text-slate-200 font-medium' : 'text-slate-400'}`}>
+                        {message}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 font-medium tracking-tight">
+                        {formatTimeAgo(createdAt)}
+                    </p>
+                </div>
+
+                {/* Hover Action: Mark Read Button (Only if unread) */}
+                {!isRead && (
+                    <button
+                        onClick={(e) => onMarkRead(e, _id)}
+                        className="opacity-0 group-hover:opacity-100 absolute right-3 top-6 -translate-y-1/2 p-1.5 text-slate-400 hover:text-emerald-400 bg-slate-800 hover:bg-slate-700 rounded-full transition-all"
+                        title="Mark as read"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </button>
                 )}
             </div>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0 pr-6">
-                <p className={`text-sm ${!isRead ? 'text-slate-200 font-medium' : 'text-slate-400'}`}>
-                    {message}
-                </p>
-                <p className="text-xs text-slate-500 mt-1 font-medium tracking-tight">
-                    {formatTimeAgo(createdAt)}
-                </p>
-            </div>
-
-            {/* Hover Action: Mark Read Button (Only if unread) */}
-            {!isRead && (
-                <button
-                    onClick={(e) => onMarkRead(e, _id)}
-                    className="opacity-0 group-hover:opacity-100 absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-emerald-400 bg-slate-800 hover:bg-slate-700 rounded-full transition-all"
-                    title="Mark as read"
-                >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                </button>
+            {/* Action Buttons for Invites */}
+            {isInvite && onAction && (
+                <div className="ml-14 mt-3 flex gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onAction(_id, 'join', metadata.inviteId);
+                        }}
+                        className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-md hover:bg-emerald-500 transition-colors uppercase tracking-wider"
+                    >
+                        Accept
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onAction(_id, 'reject', metadata.inviteId);
+                        }}
+                        className="px-4 py-1.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-md border border-slate-700 hover:bg-slate-700 transition-colors uppercase tracking-wider"
+                    >
+                        Decline
+                    </button>
+                </div>
             )}
         </div>
     );

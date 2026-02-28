@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import { useProjects, useAddProject, useDeleteProject } from '../hooks/useData.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROLES } from '../constants/roles.js';
 
-const Projects = ({ projects, setProjects }) => {
+const Projects = () => {
     const { user } = useAuth();
+    const { data: projects = [], isLoading } = useProjects();
+    const addProjectMutation = useAddProject();
+    const deleteProjectMutation = useDeleteProject();
+
     const isMember = user?.role === ROLES.MEMBER;
     const [showModal, setShowModal] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
@@ -30,8 +34,7 @@ const Projects = ({ projects, setProjects }) => {
         };
 
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/projects`, newProj, { withCredentials: true });
-            setProjects([...projects, res.data.data]);
+            await addProjectMutation.mutateAsync(newProj);
             setNewProjectName('');
             setNewProjectDescription('');
             setNewProjectPriority('Medium');
@@ -45,8 +48,7 @@ const Projects = ({ projects, setProjects }) => {
     // Delete project
     const deleteProject = async (id) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/projects/${id}`, { withCredentials: true });
-            setProjects(projects.filter(p => p._id !== id));
+            await deleteProjectMutation.mutateAsync(id);
         } catch (error) {
             console.error("Failed to delete project:", error);
             alert("Error deleting project. Ensure you are the owner or an Admin.");
@@ -109,7 +111,7 @@ const Projects = ({ projects, setProjects }) => {
                                 <h3 className="text-sm font-mono text-zinc-400 uppercase tracking-widest mb-4">Initialize New Project</h3>
 
                                 <div className="mb-4">
-                                    <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Project Designation</label>
+                                    <label className="block text-zinc-500 text-sm font-mono uppercase tracking-wider mb-2">Project Designation</label>
                                     <input
                                         type="text"
                                         value={newProjectName}
@@ -121,7 +123,7 @@ const Projects = ({ projects, setProjects }) => {
                                 </div>
 
                                 <div className="mb-6">
-                                    <label className="block text-zinc-500 text-xs font-mono uppercase tracking-wider mb-2">Priority Level</label>
+                                    <label className="block text-zinc-500 text-sm font-mono uppercase tracking-wider mb-2">Priority Level</label>
                                     <select
                                         value={newProjectPriority}
                                         onChange={(e) => setNewProjectPriority(e.target.value)}
@@ -152,7 +154,11 @@ const Projects = ({ projects, setProjects }) => {
                         )}
 
                         {/* Projects List */}
-                        {projects.length === 0 ? (
+                        {isLoading ? (
+                            <div className="py-20 flex justify-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
+                            </div>
+                        ) : projects.length === 0 ? (
                             <div className="text-center py-12 border border-dashed border-zinc-800 rounded-sm bg-zinc-950/50">
                                 <p className="text-zinc-600 font-mono text-sm uppercase">No active projects detected.</p>
                             </div>
@@ -177,15 +183,15 @@ const Projects = ({ projects, setProjects }) => {
                                                 <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{proj.description}</p>
                                             )}
                                             <div className="flex flex-wrap gap-2 mb-6">
-                                                <span className={`text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getPriorityColor(proj.priority)}`}>
+                                                <span className={`text-[12px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getPriorityColor(proj.priority)}`}>
                                                     {proj.priority} PR
                                                 </span>
-                                                <span className={`text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getStatusColor(proj.status)}`}>
+                                                <span className={`text-[12px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getStatusColor(proj.status)}`}>
                                                     {proj.status}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-between items-center text-xs text-zinc-500 font-mono">
+                                        <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-between items-center text-sm text-zinc-500 font-mono">
                                             <span className="truncate w-24" title={proj._id}>ID: ...{proj._id.substring(18)}</span>
                                             <span>ETA: {new Date(proj.dueDate).toLocaleDateString()}</span>
                                         </div>

@@ -25,7 +25,7 @@ memberSchema.pre('validate', function () {
 const teamSchema = new mongoose.Schema({
     name: { type: String, required: true },
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
-    lead: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    lead: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     status: { type: String, enum: ['Operational', 'Standby', 'Inactive'], default: 'Operational' },
     members: [memberSchema]
 }, { timestamps: true });

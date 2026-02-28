@@ -61,6 +61,16 @@ const AcceptInvite = () => {
                 password: formData.password
             }, { withCredentials: true });
 
+            if (res.data && res.data.data) {
+                const userData = {
+                    id: res.data.data.id,
+                    email: res.data.data.email,
+                    name: res.data.data.name,
+                    role: res.data.data.role
+                };
+                localStorage.setItem('sys_auth_user', JSON.stringify(userData));
+            }
+
             toast.success('Account activated successfully! Logging you in...');
 
             // Redirect to dashboard after a short delay

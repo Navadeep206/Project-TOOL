@@ -3,21 +3,25 @@ import cors from 'cors';
 import "dotenv/config";
 import connectDB from "./config/mongodb.js";
 import cookieParser from "cookie-parser";
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Environment Validation
-const REQUIRED_ENV = ['MONGO_DB_URL', 'JWT_SECRET'];
-REQUIRED_ENV.forEach(key => {
-    if (!process.env[key]) {
-        console.error(`[FATAL] Missing required environment variable: ${key}`);
-        process.exit(1);
-    }
-});
+const REQUIRED_ENV = ['MONGO_DB_URL', 'JWT_SECRET', 'PORT'];
+const missingEnv = REQUIRED_ENV.filter(key => !process.env[key]);
+
+if (missingEnv.length > 0) {
+    console.error(`\x1b[31m[FATAL] Missing required environment variables: ${missingEnv.join(', ')}\x1b[0m`);
+    process.exit(1);
+}
 import userRoute from './routes/userRoute.js';
 import projectRoute from './routes/projectRoute.js';
 import taskRoute from './routes/taskRoute.js';
 import teamRoute from './routes/teamRoute.js';
 import adminRoute from './routes/adminRoute.js';
+import invitationRoute from './routes/invitationRoute.js';
+import chatRoute from './routes/chatRoute.js';
 import { protect } from './middleware/authMiddleware.js';
 import { authorizeRoles } from './middleware/roleMiddleware.js';
 import { accessExpiryMiddleware } from './middleware/accessExpiryMiddleware.js';
@@ -28,6 +32,7 @@ import approvalRoutes from './routes/approval.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import accessRoutes from './routes/access.routes.js';
 import auditLogRoutes from './routes/auditLogRoutes.js';
+import analyticsRoute from './routes/analyticsRoute.js';
 
 import { ROLES } from './constants/roles.js';
 
@@ -37,6 +42,25 @@ console.log(`[Env Check] JWT_SECRET: ${process.env.JWT_SECRET ? 'PRESENT' : 'MIS
 console.log(`[Env Check] ALLOWED_ORIGINS: ${process.env.ALLOWED_ORIGINS ? 'PRESENT' : 'MISSING'}`);
 
 const app = express();
+
+// 1. Security Headers - Adjusted for React/Recharts compatibility
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// 2. NoSQL Injection Protection - Handled by Zod Validation in routes
+// (mongoSanitize removed due to Express 5 incompatibility)
+
+// 3. Global Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per 15 mins
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Too many requests, please try again later." }
+});
+app.use('/api/', limiter);
 
 // Request logger
 app.use((req, res, next) => {
@@ -70,6 +94,8 @@ app.use('/api/projects', projectRoute);
 app.use('/api/tasks', taskRoute);
 app.use('/api/teams', teamRoute);
 app.use('/api/admin', adminRoute);
+app.use('/api/invitations', invitationRoute);
+app.use('/api/chat', chatRoute);
 
 // Mount Modular Plugins
 // Apply global expiry middleware alongside protect to ensure Temp Access restrictions apply
@@ -80,6 +106,9 @@ app.use('/api/v1/notifications', protect, accessExpiryMiddleware, notificationRo
 app.use('/api/v1/access', protect, authorizeRoles(ROLES.ADMIN), accessRoutes);
 // Audit Logs require Admin
 app.use('/api/audit-logs', protect, authorizeRoles(ROLES.ADMIN), auditLogRoutes);
+
+// Analytics
+app.use('/api/analytics', protect, analyticsRoute);
 
 app.get('/', (req, res) => {
     res.send('Hello World!');

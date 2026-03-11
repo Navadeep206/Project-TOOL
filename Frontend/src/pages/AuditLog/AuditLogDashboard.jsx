@@ -71,23 +71,23 @@ export default function AuditLogDashboard() {
 
     return (
         <div className="bg-zinc-950 min-h-screen p-6 md:p-8 font-sans text-zinc-300">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-full">
                 {/* Header Setup */}
-                <div className="mb-12 border-b-2 border-zinc-800 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="mb-12 border-b-2 border-zinc-900 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
-                        <h1 className="text-4xl md:text-5xl font-black text-zinc-100 uppercase tracking-tight mb-2 flex items-center gap-4">
+                        <h1 className="text-3xl md:text-4xl font-black text-zinc-100 uppercase tracking-tight mb-2 flex items-center gap-4">
                             <span className="text-purple-500">_</span> Audit Logs
                         </h1>
-                        <p className="text-zinc-500 font-mono text-sm uppercase tracking-widest">System Events & Activity Tracking</p>
+                        <p className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em]">System Events & Activity Tracking</p>
                     </div>
                     <button
-                        className="inline-flex items-center px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 font-mono text-sm transition-all uppercase tracking-wider rounded-sm focus:outline-none focus:border-purple-500"
+                        className="inline-flex items-center px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 font-black text-[10px] transition-all uppercase tracking-[0.2em] rounded-sm shadow-xl flex items-center gap-2"
                         onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/audit-logs/export?format=csv`, '_blank')}
                     >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        Export CSV
+                        EXPORT_METRICS
                     </button>
                 </div>
 
@@ -130,8 +130,8 @@ export default function AuditLogDashboard() {
                                 </div>
                                 <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                                     <div>
-                                        <p className="text-xs font-mono uppercase text-zinc-500 tracking-wider">
-                                            Showing <span className="text-zinc-300">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="text-zinc-300">{Math.min(currentPage * itemsPerPage, filteredLogs.length)}</span> of <span className="text-zinc-300">{filteredLogs.length}</span> results
+                                        <p className="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">
+                                            Showing <span className="text-zinc-400">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="text-zinc-400">{Math.min(currentPage * itemsPerPage, filteredLogs.length)}</span> of <span className="text-zinc-400">{filteredLogs.length}</span> results
                                         </p>
                                     </div>
                                     <div>
@@ -154,9 +154,9 @@ export default function AuditLogDashboard() {
                                                     <button
                                                         key={pageNumber}
                                                         onClick={() => setCurrentPage(pageNumber)}
-                                                        className={`relative inline-flex items-center px-4 py-2 text-xs font-mono focus:z-20 border-r border-zinc-800 transition-colors ${isCurrent
-                                                            ? 'z-10 bg-zinc-800 text-purple-400 font-bold'
-                                                            : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300'
+                                                        className={`relative inline-flex items-center px-4 py-2 text-[10px] font-black focus:z-20 border-r border-zinc-800 transition-all uppercase tracking-wider ${isCurrent
+                                                            ? 'z-10 bg-zinc-800 text-purple-500 font-black shadow-[inset_0_-2px_0_0_#a855f7]'
+                                                            : 'text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-300'
                                                             }`}
                                                     >
                                                         {pageNumber}

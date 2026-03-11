@@ -3,14 +3,32 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import { ROLES } from '../constants/roles.js';
-import { useTasks, useProjects, useTeams, useAddTask, useUpdateTask, useDeleteTask } from '../hooks/useData.js';
+import { usePaginatedTasks, useProjects, useTeams, useAddTask, useUpdateTask, useDeleteTask } from '../hooks/useData.js';
+import { Search, Plus, X } from 'lucide-react';
 
 const Tasks = () => {
     const { user } = useAuth();
     const socket = useSocket();
 
+    // Search & Pagination States
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const itemsPerPage = 8;
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Data hooks
-    const { data: tasks = [], isLoading: tasksLoading } = useTasks();
+    const { data: responseData = {}, isLoading: tasksLoading } = usePaginatedTasks(currentPage, itemsPerPage, debouncedSearch);
+    const tasks = responseData.data || [];
+    const pagination = responseData.pagination || { totalPages: 1, total: 0 };
+
     const { data: projects = [], isLoading: projectsLoading } = useProjects();
     const { data: teams = [], isLoading: teamsLoading } = useTeams();
 
@@ -141,6 +159,16 @@ const Tasks = () => {
         }
     };
 
+    const deleteTask = async (id) => {
+        if (!window.confirm("Are you sure you want to terminate this task?")) return;
+        try {
+            await deleteTaskMutation.mutateAsync(id);
+        } catch (error) {
+            console.error("Error deleting task:", error);
+            alert("Failed to delete task.");
+        }
+    };
+
     const getStatusColor = (status) => {
         if (status === 'Done' || status === 'Completed') {
             return 'bg-emerald-900/50 text-emerald-400 border-emerald-800/50';
@@ -153,22 +181,35 @@ const Tasks = () => {
 
     return (
         <div className="bg-zinc-950 min-h-screen p-6 md:p-8 font-sans text-zinc-300">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-full">
                 {/* Header Section */}
-                <div className="mb-8 border-b-2 border-zinc-800 pb-6">
-                    <h1 className="text-4xl md:text-5xl font-black text-zinc-100 uppercase tracking-tight mb-2 flex items-center gap-4">
+                <div className="mb-8 border-b-2 border-zinc-900 pb-6">
+                    <h1 className="text-3xl md:text-4xl font-black text-zinc-100 uppercase tracking-tight mb-2 flex items-center gap-4">
                         <span className="text-emerald-500">_</span> Task Queue
                     </h1>
-                    <p className="text-zinc-500 font-mono text-sm uppercase tracking-widest">Active Operations & Directives</p>
+                    <p className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em]">Active Operations & Directives</p>
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden flex flex-col h-full">
                     {/* Panel Header */}
-                    <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4 flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-zinc-100 uppercase tracking-wide flex items-center gap-2">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-sm inline-block"></span> T_Queue
+                    <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h2 className="text-lg font-black text-zinc-100 uppercase tracking-tight flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-sm inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span> T_Queue
                         </h2>
                         <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" strokeWidth={2.5} />
+                                <input
+                                    type="text"
+                                    placeholder="SEARCH DIRECTIVES..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-[10px] font-black uppercase tracking-wider pl-9 pr-3 py-1.5 rounded-sm focus:outline-none focus:border-emerald-500 w-48 placeholder-zinc-800 hidden md:block"
+                                />
+                                {searchQuery && (
+                                    <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-200 hidden md:block">✕</button>
+                                )}
+                            </div>
                             <div className="flex -space-x-2">
                                 {onlineUsers.slice(0, 5).map(uId => (
                                     <div key={uId} className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-950 flex items-center justify-center text-[12px] text-emerald-400 font-bold" title="Online Operative">
@@ -184,9 +225,9 @@ const Tasks = () => {
                             {!isMember && (
                                 <button
                                     onClick={() => setShowTaskModal(!showTaskModal)}
-                                    className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-sm hover:bg-zinc-700 hover:text-white font-mono text-sm transition-all"
+                                    className="bg-zinc-900 text-zinc-400 border border-zinc-800 px-4 py-1.5 rounded-sm hover:bg-zinc-800 hover:text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all whitespace-nowrap flex items-center gap-2"
                                 >
-                                    + ADD_TASK
+                                    <Plus size={12} strokeWidth={2.5} /> ADD_TASK
                                 </button>
                             )}
                         </div>
@@ -309,31 +350,31 @@ const Tasks = () => {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                                 {tasks.map(task => (
-                                    <div key={task._id} className={`bg-zinc-950 border rounded-sm p-5 transition-all group relative ${task.status === 'Done' ? 'border-zinc-800 opacity-60' : 'border-zinc-700 hover:border-emerald-500/50'}`}>
-                                        <div className="flex justify-between items-start mb-4">
+                                    <div key={task._id} className={`bg-zinc-950 border rounded-sm p-5 transition-all group relative font-mono shadow-2xl ${task.status === 'Done' ? 'border-zinc-900 opacity-60' : 'border-zinc-800 hover:border-emerald-900/50'}`}>
+                                        <div className="flex justify-between items-start mb-5 border-b border-zinc-900 pb-3">
                                             <div className="pr-4 w-full">
-                                                <p className={`text-lg font-medium mb-2 truncate ${task.status === 'Done' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                                                <p className={`text-[13px] font-black uppercase tracking-tight mb-2 truncate ${task.status === 'Done' ? 'text-zinc-600 line-through' : 'text-zinc-200 group-hover:text-emerald-500 transition-colors'}`}>
                                                     {task.name}
                                                 </p>
-                                                <div className="flex items-center gap-2 text-sm font-mono text-zinc-500">
-                                                    <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.project}>Proj: {task.project?.substring(18) || 'N/A'}</span>
-                                                    {task.team && <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.team}>Team: {task.team.substring(18)}</span>}
-                                                    {task.assignedTo && <span className="bg-zinc-900 px-2 py-1 rounded-sm border border-zinc-800 truncate max-w-[120px]" title={task.assignedTo}>User: {task.assignedTo.substring(18)}</span>}
+                                                <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold text-zinc-600 uppercase tracking-widest mt-3">
+                                                    <span className="bg-zinc-950 px-2 py-0.5 rounded-sm border border-zinc-900 truncate max-w-[120px]" title={task.project}>REF: {task.project?.substring(18) || 'N/A'}</span>
+                                                    {task.team && <span className="bg-zinc-950 px-2 py-0.5 rounded-sm border border-zinc-900 truncate max-w-[120px]" title={task.team}>UNIT: {task.team.substring(18)}</span>}
+                                                    {task.assignedTo && <span className="bg-zinc-950 px-2 py-0.5 rounded-sm border border-zinc-900 truncate max-w-[120px]" title={task.assignedTo}>OP: {task.assignedTo.substring(18)}</span>}
                                                 </div>
                                             </div>
                                             {!isMember && (
                                                 <button
                                                     onClick={() => deleteTask(task._id)}
-                                                    className="text-zinc-600 hover:text-red-500 transition-colors focus:outline-none flex-shrink-0"
+                                                    className="text-zinc-800 hover:text-red-500 transition-all focus:outline-none flex-shrink-0"
                                                     title="Terminate Task"
                                                 >
-                                                    ✕
+                                                    <X size={14} strokeWidth={2.5} />
                                                 </button>
                                             )}
                                         </div>
                                         <div className="flex justify-between items-center mt-6">
                                             <div className="flex items-center gap-3">
-                                                <span className={`text-[12px] font-mono uppercase tracking-wider px-2.5 py-1 border rounded-sm ${getStatusColor(task.status)}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 border rounded-sm ${getStatusColor(task.status)}`}>
                                                     {task.status}
                                                 </span>
                                                 {task.isBlocked && (
@@ -345,15 +386,15 @@ const Tasks = () => {
                                             <button
                                                 onClick={() => markTaskCompleted(task._id, task.status)}
                                                 disabled={task.isBlocked && task.status !== 'Done'}
-                                                className={`text-sm font-mono uppercase font-bold tracking-wider px-4 py-2 rounded-sm transition-all border ${task.status === 'Done'
-                                                    ? 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
+                                                className={`text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-sm transition-all border ${task.status === 'Done'
+                                                    ? 'bg-zinc-900 text-zinc-600 border-zinc-800 hover:bg-zinc-800'
                                                     : task.isBlocked
-                                                        ? 'bg-zinc-900 text-zinc-700 border-zinc-800 cursor-not-allowed opacity-50'
-                                                        : 'bg-emerald-900/40 text-emerald-400 border-emerald-800 hover:bg-emerald-800 hover:text-emerald-100'
+                                                        ? 'bg-zinc-950 text-zinc-800 border-zinc-900 cursor-not-allowed opacity-50'
+                                                        : 'bg-emerald-950/20 text-emerald-500 border-emerald-900/30 hover:bg-emerald-500 hover:text-black transition-all duration-300'
                                                     }`}
                                                 title={task.isBlocked ? "Execution blocked by dependencies" : ""}
                                             >
-                                                {task.status === 'Done' ? 'Reopen' : 'Complete'}
+                                                {task.status === 'Done' ? 'REOPEN' : 'EXECUTE'}
                                             </button>
                                         </div>
 
@@ -422,6 +463,34 @@ const Tasks = () => {
 
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {pagination.totalPages > 1 && (
+                            <div className="mt-8 flex justify-between items-center border-t border-zinc-800 pt-4">
+                                <p className="text-zinc-500 font-mono text-xs uppercase tracking-wider">
+                                    Total Operative Records: {pagination.total}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        disabled={currentPage === 1 || isLoading}
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        className="px-3 py-1 bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-sm disabled:opacity-50 hover:bg-zinc-700 hover:text-white font-mono text-xs transition-all"
+                                    >
+                                        &lt; PREV
+                                    </button>
+                                    <span className="px-3 py-1 bg-zinc-900 border border-zinc-800 text-emerald-400 font-mono text-xs rounded-sm">
+                                        PAGE {currentPage} / {pagination.totalPages}
+                                    </span>
+                                    <button
+                                        disabled={currentPage === pagination.totalPages || isLoading}
+                                        onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                                        className="px-3 py-1 bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-sm disabled:opacity-50 hover:bg-zinc-700 hover:text-white font-mono text-xs transition-all"
+                                    >
+                                        NEXT &gt;
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

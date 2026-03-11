@@ -20,29 +20,30 @@ export const LogsTable = ({ logs }) => {
 
     return (
         <div className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden flex flex-col h-full">
-            <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4">
-                <h2 className="text-xl font-bold text-zinc-100 uppercase tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-sm inline-block"></span> Activity Records
+            <div className="bg-zinc-950 border-b-2 border-zinc-900 px-6 py-5">
+                <h2 className="text-sm font-black text-zinc-100 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-sm inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                    Activity_Records
                 </h2>
             </div>
             <div className="overflow-x-auto p-0">
                 <table className="min-w-full divide-y divide-zinc-800">
                     <thead className="bg-zinc-950">
                         <tr>
-                            <th scope="col" className="px-6 py-4 text-left text-xs font-mono text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
-                                Date & Time
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] border-b border-zinc-900">
+                                TIMESTAMP
                             </th>
-                            <th scope="col" className="px-6 py-4 text-left text-xs font-mono text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
-                                User
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] border-b border-zinc-900">
+                                OPERATIVE
                             </th>
-                            <th scope="col" className="px-6 py-4 text-left text-xs font-mono text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
-                                Action & Resource
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] border-b border-zinc-900">
+                                ACTION_TYPE
                             </th>
-                            <th scope="col" className="px-6 py-4 text-left text-xs font-mono text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
-                                Description
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] border-b border-zinc-900">
+                                DESCRIPTION
                             </th>
-                            <th scope="col" className="px-6 py-4 text-left text-xs font-mono text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
-                                Status
+                            <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] border-b border-zinc-900">
+                                STATUS
                             </th>
                         </tr>
                     </thead>
@@ -58,10 +59,10 @@ export const LogsTable = ({ logs }) => {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
                                         <div>
-                                            <div className="text-sm font-bold text-zinc-200 group-hover:text-purple-400 transition-colors">
-                                                {log.userId ? log.userId.name : 'Unknown User'}
+                                            <div className="text-[11px] font-black text-zinc-200 group-hover:text-purple-500 transition-colors uppercase tracking-tight">
+                                                {log.userId ? log.userId.name : 'UNKNOWN_ENTITY'}
                                             </div>
-                                            <div className="text-xs text-zinc-500 mt-2 flex items-center gap-3 font-mono">
+                                            <div className="text-[9px] text-zinc-600 mt-1.5 flex items-center gap-3 font-mono font-bold uppercase tracking-widest">
                                                 {log.userId?.email || 'N/A'}
                                                 <span className={getRoleBadge(log.userRole)}>
                                                     {log.userRole}
@@ -71,12 +72,12 @@ export const LogsTable = ({ logs }) => {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider mb-1">{log.action}</div>
-                                    <div className="text-xs text-zinc-500 font-mono capitalize">{log.resourceType} <span className="text-zinc-600">{log.resourceId ? `[${log.resourceId}]` : ''}</span></div>
+                                    <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] mb-1">{log.action}</div>
+                                    <div className="text-[9px] text-zinc-700 font-black font-mono uppercase tracking-widest">{log.resourceType} <span className="opacity-50">{log.resourceId ? `[${log.resourceId.substring(0, 8)}]` : ''}</span></div>
                                 </td>
-                                <td className="px-6 py-4 text-sm text-zinc-400 max-w-xs truncate" title={log.description}>
+                                <td className="px-6 py-4 text-[11px] text-zinc-500 max-w-xs truncate font-mono uppercase tracking-tight" title={log.description}>
                                     {log.description}
-                                    <div className="text-[10px] text-zinc-600 font-mono mt-2 tracking-wider">IP: {log.ipAddress}</div>
+                                    <div className="text-[8px] text-zinc-800 font-black font-mono mt-1.5 tracking-[0.2em]">IP_ADDR: {log.ipAddress}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border rounded-sm ${getStatusColor(log.status)}`}>

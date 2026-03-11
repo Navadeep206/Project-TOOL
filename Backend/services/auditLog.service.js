@@ -72,4 +72,4 @@ class AuditLogService {
     }
 }
 
-export const auditService = new AuditLogService();
+export const auditLogService = new AuditLogService();

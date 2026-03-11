@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { 
+import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
@@ -80,22 +80,22 @@ const Analytics = () => {
 
     return (
         <div className="bg-zinc-950 min-h-screen p-6 md:p-8 font-sans text-zinc-300">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-full">
                 {/* Header & Controls */}
                 <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-900 pb-8">
                     <div>
-                        <h1 className="text-4xl font-black text-zinc-100 uppercase tracking-tight flex items-center gap-3">
-                            <span className="text-amber-500 font-mono">_</span> Analytics Engine
+                        <h1 className="text-3xl md:text-4xl font-black text-zinc-100 uppercase tracking-tight mb-2 flex items-center gap-4">
+                            <span className="text-amber-500">_</span> Analytics Engine
                         </h1>
-                        <p className="text-zinc-500 font-mono text-base uppercase mt-2 tracking-widest">Advanced Logical Diagnostics & Metrics</p>
+                        <p className="text-zinc-600 font-bold text-[10px] uppercase tracking-[0.2em]">Advanced Logical Diagnostics & Metrics</p>
                     </div>
 
                     <div className="flex flex-col gap-2 min-w-[300px]">
-                        <label className="text-sm font-mono uppercase text-zinc-500 tracking-wider">Scope Selection</label>
-                        <select 
+                        <label className="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em]">Scope Selection</label>
+                        <select
                             value={selectedProjectId}
                             onChange={(e) => setSelectedProjectId(e.target.value)}
-                            className="bg-zinc-900 border border-zinc-800 text-zinc-100 px-4 py-2.5 rounded-sm font-mono text-base focus:outline-none focus:border-amber-500 transition-all cursor-pointer appearance-none shadow-xl"
+                            className="bg-zinc-900 border border-zinc-800 text-zinc-100 px-4 py-2.5 rounded-sm font-mono text-[11px] font-black uppercase tracking-wider focus:outline-none focus:border-amber-500 transition-all cursor-pointer appearance-none shadow-xl"
                         >
                             {projects.map(p => (
                                 <option key={p._id} value={p._id}>{p.name}</option>
@@ -116,73 +116,78 @@ const Analytics = () => {
                     <div className="space-y-6">
                         {/* KPI Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm">
+                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm font-mono shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-zinc-800"></div>
                                 <div className="flex justify-between items-start mb-4">
-                                    <Layers className="h-5 w-5 text-zinc-600" />
-                                    <span className="text-[12px] font-mono text-zinc-500 uppercase">Load</span>
+                                    <Layers size={14} className="text-zinc-600" strokeWidth={2.5} />
+                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Load</span>
                                 </div>
-                                <h3 className="text-3xl font-black text-zinc-100">{metrics?.totalTasks || 0}</h3>
-                                <p className="text-sm font-mono text-zinc-500 mt-1 uppercase">Total Objectives</p>
+                                <h3 className="text-3xl font-black text-zinc-100 tracking-tighter">{metrics?.totalTasks || 0}</h3>
+                                <p className="text-[9px] font-bold text-zinc-600 mt-1 uppercase tracking-[0.1em]">Total Objectives</p>
                             </div>
 
-                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm">
+                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm font-mono shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-emerald-500/30"></div>
                                 <div className="flex justify-between items-start mb-4">
-                                    <Target className="h-5 w-5 text-emerald-500/50" />
-                                    <span className="text-[12px] font-mono text-zinc-500 uppercase">Success</span>
+                                    <Target size={14} className="text-emerald-500/50" strokeWidth={2.5} />
+                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Success</span>
                                 </div>
-                                <h3 className="text-3xl font-black text-emerald-500">{metrics?.completedTasks || 0}</h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-emerald-500" 
+                                <h3 className="text-3xl font-black text-emerald-500 tracking-tighter">{metrics?.completedTasks || 0}</h3>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex-1 h-1 bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
+                                        <div
+                                            className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                                             style={{ width: `${metrics?.completionPercentage || 0}%` }}
                                         ></div>
                                     </div>
-                                    <span className="text-[10px] font-mono text-emerald-500">{Math.round(metrics?.completionPercentage || 0)}%</span>
+                                    <span className="text-[9px] font-black text-emerald-500">{Math.round(metrics?.completionPercentage || 0)}%</span>
                                 </div>
                             </div>
 
-                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm">
+                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm font-mono shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-red-500/30"></div>
                                 <div className="flex justify-between items-start mb-4">
-                                    <TrendingDown className="h-5 w-5 text-red-500/50" />
-                                    <span className="text-[12px] font-mono text-zinc-500 uppercase">Slippage</span>
+                                    <TrendingDown size={14} className="text-red-500/50" strokeWidth={2.5} />
+                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Slippage</span>
                                 </div>
-                                <h3 className="text-3xl font-black text-red-500">{metrics?.overdueTasks || 0}</h3>
-                                <p className="text-sm font-mono text-zinc-500 mt-1 uppercase">Overdue Directives</p>
+                                <h3 className="text-3xl font-black text-red-500 tracking-tighter">{metrics?.overdueTasks || 0}</h3>
+                                <p className="text-[9px] font-bold text-zinc-600 mt-1 uppercase tracking-[0.1em]">Overdue Directives</p>
                             </div>
 
-                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm">
+                            <div className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-sm font-mono shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-amber-500/30"></div>
                                 <div className="flex justify-between items-start mb-4">
-                                    <Zap className="h-5 w-5 text-amber-500/50" />
-                                    <span className="text-[12px] font-mono text-zinc-500 uppercase">Ops</span>
+                                    <Zap size={14} className="text-amber-500/50" strokeWidth={2.5} />
+                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Ops</span>
                                 </div>
-                                <h3 className="text-3xl font-black text-amber-500">Active</h3>
-                                <p className="text-sm font-mono text-zinc-500 mt-1 uppercase">Status Nominal</p>
+                                <h3 className="text-3xl font-black text-amber-500 tracking-tighter">Active</h3>
+                                <p className="text-[9px] font-bold text-zinc-600 mt-1 uppercase tracking-[0.1em]">Status Nominal</p>
                             </div>
                         </div>
 
                         {/* Main Charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Productivity Chart */}
-                            <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-sm h-[400px] flex flex-col">
+                            <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-sm h-[400px] flex flex-col font-mono shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-zinc-800"></div>
                                 <div className="flex items-center gap-2 mb-6">
-                                    <Users className="h-4 w-4 text-zinc-500" />
-                                    <h3 className="text-sm font-black font-mono uppercase tracking-widest text-zinc-400">Operative Productivity</h3>
+                                    <Users size={14} className="text-zinc-600" strokeWidth={2.5} />
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Operative Productivity</h3>
                                 </div>
                                 <div className="flex-1">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={productivity} layout="vertical">
                                             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
                                             <XAxis type="number" stroke="#52525b" fontSize={12} fontClassName="font-mono" />
-                                            <YAxis 
-                                                dataKey="name" 
-                                                type="category" 
-                                                stroke="#52525b" 
-                                                fontSize={12} 
+                                            <YAxis
+                                                dataKey="name"
+                                                type="category"
+                                                stroke="#52525b"
+                                                fontSize={12}
                                                 fontClassName="font-mono"
                                                 width={100}
                                             />
-                                            <Tooltip 
+                                            <Tooltip
                                                 contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: 0 }}
                                                 itemStyle={{ color: '#fbbf24', fontFamily: 'monospace', fontSize: '12px' }}
                                             />
@@ -193,10 +198,11 @@ const Analytics = () => {
                             </div>
 
                             {/* Priority Distribution */}
-                            <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-sm h-[400px] flex flex-col">
+                            <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-sm h-[400px] flex flex-col font-mono shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-zinc-800"></div>
                                 <div className="flex items-center gap-2 mb-6">
-                                    <LayoutDashboard className="h-4 w-4 text-zinc-500" />
-                                    <h3 className="text-sm font-black font-mono uppercase tracking-widest text-zinc-400">Priority Spectrum</h3>
+                                    <LayoutDashboard size={14} className="text-zinc-600" strokeWidth={2.5} />
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Priority Spectrum</h3>
                                 </div>
                                 <div className="flex-1 flex items-center justify-center">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -215,7 +221,7 @@ const Analytics = () => {
                                                     <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.priority] || '#3f3f46'} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip 
+                                            <Tooltip
                                                 contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: 0 }}
                                                 itemStyle={{ fontFamily: 'monospace', fontSize: '12px' }}
                                             />
@@ -227,28 +233,29 @@ const Analytics = () => {
                         </div>
 
                         {/* Burndown / Trend Line */}
-                        <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-sm h-[350px] flex flex-col">
+                        <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-sm h-[400px] flex flex-col font-mono shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-0.5 bg-zinc-800"></div>
                             <div className="flex items-center gap-2 mb-6">
-                                < Zap className="h-4 w-4 text-amber-500" />
-                                <h3 className="text-sm font-black font-mono uppercase tracking-widest text-zinc-400">Objective Acquisition Trend</h3>
+                                <Zap size={14} className="text-amber-500" strokeWidth={2.5} />
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Objective Acquisition Trend</h3>
                             </div>
                             <div className="flex-1">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={burnDownData}>
                                         <defs>
                                             <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                             </linearGradient>
                                             <linearGradient id="colorDone" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                                         <XAxis dataKey="_id" stroke="#52525b" fontSize={10} fontClassName="font-mono" />
                                         <YAxis stroke="#52525b" fontSize={10} fontClassName="font-mono" />
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: 0 }}
                                             labelStyle={{ color: '#a1a1aa', marginBottom: '8px', fontSize: '12px' }}
                                         />
@@ -264,7 +271,7 @@ const Analytics = () => {
 
                 {!loading && projects.length === 0 && (
                     <div className="text-center py-20 border border-dashed border-zinc-800 rounded-sm">
-                        <Layer className="h-10 w-10 text-zinc-800 mx-auto mb-4" />
+                        <Layers className="h-10 w-10 text-zinc-800 mx-auto mb-4" />
                         <h3 className="text-zinc-600 font-mono text-sm uppercase">NO DIAGNOSTIC DATA: ASSIGN PROJECTS TO INITIALIZE</h3>
                     </div>
                 )}

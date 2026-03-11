@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+import Logo from '../components/Logo';
+
 const Login = () => {
     const { login } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,8 +27,18 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-zinc-950 p-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-sm w-full max-w-md relative overflow-hidden">
+        <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-zinc-950 p-4">
+            {/* Logo Section - Moved above the card for cleaner UI */}
+            <div className="flex flex-col items-center mb-8 animate-in fade-in slide-in-from-top-4 duration-1000">
+                <Logo size="xl" showText={true} className="flex-col !gap-4" />
+                <div className="flex items-center gap-4 mt-4">
+                    <div className="h-px w-12 bg-zinc-800"></div>
+                    <p className="text-zinc-500 font-mono text-[10px] uppercase tracking-[0.4em]">Enterprise Resource Planning</p>
+                    <div className="h-px w-12 bg-zinc-800"></div>
+                </div>
+            </div>
+
+            <div className="bg-zinc-900 border border-zinc-800 rounded-sm w-full max-w-md relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
                 {/* Decorative Top header */}
                 <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4 flex justify-between items-center relative">
                     <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>

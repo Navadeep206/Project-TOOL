@@ -7,8 +7,13 @@ export const getTeams = async (req, res) => {
         let query = {};
 
         if (req.user && req.user.role === ROLES.MEMBER) {
-            console.log(`[DEBUG] Isolation: Fetching teams for Member: ${req.user._id} (${req.user.email})`);
-            query['members.user'] = req.user._id;
+            console.log(`[DEBUG] Isolation: Fetching teams for Member/Lead: ${req.user._id} (${req.user.email})`);
+            query = {
+                $or: [
+                    { 'members.user': req.user._id },
+                    { 'lead': req.user._id }
+                ]
+            };
         }
 
         // Project context filtering
@@ -130,5 +135,39 @@ export const updateTeamMember = async (req, res) => {
         res.status(200).json({ success: true, data: team });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteTeam = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const team = await Team.findByIdAndDelete(id);
+
+        if (!team) {
+            return res.status(404).json({ success: false, message: "Team not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Team deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const removeMemberFromTeam = async (req, res) => {
+    try {
+        const { id, memberId } = req.params;
+        const team = await Team.findById(id);
+
+        if (!team) {
+            return res.status(404).json({ success: false, message: "Team not found" });
+        }
+
+        // Pull the member from the array
+        team.members = team.members.filter(m => String(m._id) !== memberId);
+
+        await team.save();
+        res.status(200).json({ success: true, message: "Member removed successfully", data: team });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

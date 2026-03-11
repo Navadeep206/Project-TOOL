@@ -6,7 +6,7 @@ const getStatusConfig = (status) => {
         in_review: { color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', label: 'In Review' },
         approved: { color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', label: 'Approved' },
         rejected: { color: 'bg-red-500/10 text-red-500 border-red-500/20', label: 'Rejected' },
-        cancelled: { color: 'bg-slate-500/10 text-slate-400 border-slate-500/20', label: 'Cancelled' },
+        cancelled: { color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', label: 'Cancelled' },
     };
     return configs[status] || configs.pending;
 };
@@ -15,83 +15,144 @@ const getTypeLabel = (type) => {
     return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
 
-const ApprovalItem = ({ request, isHistory, onAction }) => {
+const ApprovalItem = ({ request, isHistory, isOwnRequest, onAction, currentUser }) => {
     const statusConfig = getStatusConfig(request.currentStatus);
+    const requesterName = request.requesterId?.fullname || request.requesterId?.username || 'Unknown User';
+
+    // RBAC logic for frontend button visibility
+    const canDecide = () => {
+        if (!currentUser || isOwnRequest || isHistory) return false;
+
+        const userRole = currentUser.role?.toUpperCase();
+        const requiredLevel = request.approvalLevel?.toUpperCase();
+
+        if (requiredLevel === 'ADMIN') return userRole === 'ADMIN';
+        if (requiredLevel === 'MANAGER') return ['ADMIN', 'MANAGER'].includes(userRole);
+
+        return false;
+    };
+
+    const showActions = canDecide() && ['pending', 'in_review'].includes(request.currentStatus);
 
     return (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors shadow-lg">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-sm p-5 hover:border-zinc-700 transition-colors shadow-2xl font-mono">
             <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
 
                 {/* Main Info */}
                 <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-3">
-                        <span className="font-semibold text-slate-200">
-                            {request.requesterId.split('_').pop().toUpperCase()}
+                        <span className="font-bold text-zinc-200 uppercase text-sm tracking-tight">
+                            {requesterName}
                         </span>
-                        <span className="text-xs text-slate-500 px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800/50">
-                            Role: {request.requesterRole}
+                        <span className="text-[10px] text-zinc-500 px-2 py-0.5 rounded-sm border border-zinc-800 bg-zinc-950 font-bold uppercase tracking-widest">
+                            {request.requesterRole}
                         </span>
-                        <span className="text-slate-500 text-sm">requested an action</span>
+                        {request.projectId?.name && (
+                            <span className="text-[10px] text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-sm border border-blue-500/20 font-bold uppercase tracking-widest">
+                                PROJECT: {request.projectId.name}
+                            </span>
+                        )}
                     </div>
 
                     <div>
-                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                            {getTypeLabel(request.requestType)}
-                            <span className={`text-xs px-2.5 py-1 rounded-md border font-medium ${statusConfig.color}`}>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h3 className="text-lg font-black text-white uppercase tracking-tight">
+                                {getTypeLabel(request.requestType)}
+                            </h3>
+                            <span className={`text-[9px] px-2 py-0.5 rounded-sm border font-bold uppercase tracking-widest ${statusConfig.color}`}>
                                 {statusConfig.label}
                             </span>
-                        </h3>
-                        <p className="text-sm border-l-2 border-slate-700 pl-3 py-1 my-3 text-slate-300 italic">
+                        </div>
+                        <p className="text-xs border-l-2 border-amber-600 pl-3 py-1 my-3 text-zinc-500 italic uppercase tracking-wider leading-relaxed">
                             "{request.reason}"
                         </p>
+
+                        {/* Metadata / Proposed Changes Context */}
+                        {request.metadata && Object.keys(request.metadata).length > 0 && (
+                            <div className="mt-4 p-3 bg-zinc-950 border border-zinc-800 rounded-sm flex flex-wrap gap-4">
+                                {request.metadata.newRole && (
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] uppercase text-zinc-600 font-bold mb-1 tracking-widest">PROPOSED ROLE</span>
+                                        <span className="text-xs text-amber-500 font-bold tracking-widest uppercase">{request.metadata.newRole}</span>
+                                    </div>
+                                )}
+                                {request.metadata.newDeadline && (
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] uppercase text-zinc-600 font-bold mb-1 tracking-widest">PROPOSED DEADLINE</span>
+                                        <span className="text-xs text-blue-500 font-bold uppercase">{new Date(request.metadata.newDeadline).toLocaleDateString()}</span>
+                                    </div>
+                                )}
+                                {request.requestType === 'project_deletion' && (
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] uppercase text-red-500 font-bold mb-1 tracking-widest underline decoration-double">IRREVERSIBLE ACTION</span>
+                                        <span className="text-xs text-zinc-500 font-bold uppercase tracking-tighter">COMPLETE PROJECT TERMINATION</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500">
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
                         <div className="flex items-center gap-1.5">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Req ID: {request.requestId.slice(0, 10)}...
+                            <span className="text-zinc-800">#</span> {request.requestId?.slice(0, 8)}
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {new Date(request.createdAt).toLocaleDateString()}
+                            <span className="text-zinc-800">@</span> {new Date(request.createdAt).toLocaleDateString()}
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            Requires: {request.approvalLevel.toUpperCase()}
-                        </div>
+                        {request.requiredApprovals > 1 && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-20 h-1 bg-zinc-800 rounded-sm overflow-hidden">
+                                    <div
+                                        className="h-full bg-blue-500 transition-all duration-500"
+                                        style={{ width: `${(request.currentLevel / request.requiredApprovals) * 100}%` }}
+                                    />
+                                </div>
+                                <span className="text-zinc-500">
+                                    {request.currentLevel}/{request.requiredApprovals} CLEARED
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Action / Result Block */}
-                <div className="lg:w-1/4 flex flex-col justify-center">
-                    {!isHistory ? (
+                <div className="lg:w-1/3 flex flex-col justify-center">
+                    {showActions ? (
                         <div className="flex gap-3 w-full">
                             <button
                                 onClick={() => onAction('reject')}
-                                className="flex-1 px-4 py-2 border border-red-500/20 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 hover:border-red-500/50 transition-all font-medium text-sm"
+                                className="flex-1 px-4 py-2 border border-red-900/30 bg-red-950/20 text-red-500 rounded-sm hover:bg-red-900/40 hover:border-red-500/50 transition-all font-bold text-[10px] uppercase tracking-widest"
                             >
                                 Reject
                             </button>
                             <button
                                 onClick={() => onAction('approve')}
-                                className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all shadow-lg shadow-emerald-500/20 font-medium text-sm"
+                                className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-black rounded-sm transition-all font-bold text-[10px] uppercase tracking-widest"
                             >
                                 Approve
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
-                            <p className="text-xs text-slate-500 mb-1">Decision by: <span className="text-slate-300 font-medium">{request.approverId}</span></p>
-                            {request.comments ? (
-                                <p className="text-sm text-slate-300 italic">"{request.comments}"</p>
-                            ) : (
-                                <p className="text-sm text-slate-500 italic">No comments provided.</p>
+                        <div className="flex flex-col gap-2">
+                            {request.decisionHistory?.length > 0 && (
+                                <button
+                                    onClick={() => onAction('view_history')}
+                                    className="w-full px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-sm transition-all text-[10px] font-bold uppercase tracking-widest border border-zinc-700"
+                                >
+                                    View Decision History
+                                </button>
+                            )}
+                            {isOwnRequest && ['pending', 'in_review'].includes(request.currentStatus) && (
+                                <button
+                                    className="w-full px-4 py-2 border border-zinc-800 text-zinc-600 hover:text-red-400 hover:border-red-400/30 rounded-sm transition-all text-[10px] font-bold uppercase tracking-widest"
+                                >
+                                    Cancel Request
+                                </button>
+                            )}
+                            {!isOwnRequest && !isHistory && !showActions && (
+                                <div className="text-center p-3 bg-zinc-950 rounded-sm border border-zinc-900 border-dashed">
+                                    <p className="text-[9px] text-zinc-700 uppercase tracking-widest font-black italic">Awaiting higher authority</p>
+                                </div>
                             )}
                         </div>
                     )}

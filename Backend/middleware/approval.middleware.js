@@ -43,13 +43,13 @@ export const approvalMiddleware = {
 
             // 2. Validate Authority Level
             const requiredLevel = request.approvalLevel; // 'manager' or 'admin'
-            const userRole = user.role.toUpperCase(); // 'MEMBER', 'MANAGER', 'ADMIN'
+            const userRole = user.role.toLowerCase(); // 'member', 'manager', 'admin'
 
-            if (requiredLevel === 'admin' && userRole !== 'ADMIN') {
+            if (requiredLevel === 'admin' && userRole !== 'admin') {
                 return res.status(403).json({ message: 'Access Denied: Admin authorization required for this action.' });
             }
 
-            if (requiredLevel === 'manager' && !['MANAGER', 'ADMIN'].includes(userRole)) {
+            if (requiredLevel === 'manager' && !['manager', 'admin'].includes(userRole)) {
                 return res.status(403).json({ message: 'Access Denied: Manager authorization required for this action.' });
             }
 

@@ -21,7 +21,7 @@ const approvalRequestSchema = new mongoose.Schema(
         },
         requesterRole: {
             type: String,
-            enum: ['MEMBER', 'MANAGER', 'ADMIN'],
+            enum: ['member', 'manager', 'admin'],
             required: true,
         },
         projectId: {
@@ -34,18 +34,29 @@ const approvalRequestSchema = new mongoose.Schema(
             type: String,
             enum: [
                 'role_change',
+                'role_promotion',
                 'delete_project',
+                'project_deletion',
                 'remove_user',
                 'archive_project',
-                'deadline_extension'
+                'deadline_extension',
+                'task_completion_review',
+                'project_completion',
+                'project_deadline_extension'
             ],
             required: true,
             index: true,
         },
-        // ID of the user to remove, or the project to delete, etc.
+        // ID of the user to remove, or the project to delete, task to complete, etc.
         targetEntityId: {
-            type: mongoose.Schema.Types.ObjectId, // Could be User or Project ID
+            type: mongoose.Schema.Types.ObjectId,
             required: true,
+            index: true
+        },
+        targetEntityType: {
+            type: String,
+            enum: ['Project', 'User', 'Task', 'Team'],
+            required: true
         },
         currentStatus: {
             type: String,
@@ -59,7 +70,26 @@ const approvalRequestSchema = new mongoose.Schema(
             enum: ['manager', 'admin', 'super_admin'],
             required: true,
         },
-        // The specific user who made the final decision
+        // Multi-level approval fields
+        requiredApprovals: {
+            type: Number,
+            default: 1
+        },
+        currentLevel: {
+            type: Number,
+            default: 0 // Progress in the sequence
+        },
+        // Decision Tracking
+        decisionHistory: [
+            {
+                approverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+                decision: { type: String, enum: ['approved', 'rejected', 'in_review'] },
+                comments: String,
+                timestamp: { type: Date, default: Date.now },
+                level: Number
+            }
+        ],
+        // Legacy single-approver field (maintained for backward compatibility)
         approverId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -77,6 +107,14 @@ const approvalRequestSchema = new mongoose.Schema(
             trim: true,
             maxlength: 1000,
         },
+        metadata: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {}
+        },
+        snapshot: {
+            type: mongoose.Schema.Types.Mixed,
+            default: null
+        }
     },
     {
         timestamps: true, // Auto manages createdAt and updatedAt

@@ -39,7 +39,7 @@ const Timeline = () => {
 
         const startDates = tasks.map(t => new Date(t.startDate));
         const endDates = tasks.map(t => new Date(t.dueDate));
-        
+
         let start = new Date(Math.min(...startDates));
         let end = new Date(Math.max(...endDates));
 
@@ -66,7 +66,7 @@ const Timeline = () => {
     const getTaskPosition = (task) => {
         const start = new Date(task.startDate);
         const end = new Date(task.dueDate);
-        
+
         const offsetDays = Math.floor((start - startDate) / (1000 * 60 * 60 * 24));
         const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 1;
 
@@ -85,7 +85,7 @@ const Timeline = () => {
 
         const newStart = new Date(task.startDate);
         newStart.setDate(newStart.getDate() + deltaDays);
-        
+
         const newDue = new Date(task.dueDate);
         newDue.setDate(newDue.getDate() + deltaDays);
 
@@ -94,7 +94,7 @@ const Timeline = () => {
                 startDate: newStart.toISOString(),
                 dueDate: newDue.toISOString()
             }, { withCredentials: true });
-            
+
             setTasks(prev => prev.map(t => t._id === taskId ? { ...t, startDate: newStart.toISOString(), dueDate: newDue.toISOString() } : t));
             toast.success('Task rescheduled');
         } catch (err) {
@@ -114,15 +114,18 @@ const Timeline = () => {
     return (
         <div className="bg-zinc-950 h-[calc(100vh-4rem)] flex flex-col font-sans overflow-hidden">
             {/* Header */}
-            <div className="h-16 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-8 z-30">
+            <div className="h-20 border-b-2 border-zinc-900 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-8 z-30">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
-                        <span className="text-amber-500">::</span> Gantt_Control
-                    </h2>
+                    <div>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                            <span className="text-amber-500">_</span> Gantt_Control
+                        </h2>
+                        <p className="text-zinc-600 font-bold text-[9px] uppercase tracking-[0.2em] mt-0.5">Project Temporal Mapping</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Live_Sync_Active</span>
+                <div className="flex items-center gap-3 bg-zinc-900/50 px-3 py-1.5 border border-zinc-800 rounded-sm">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></div>
+                    <span className="text-[10px] font-black font-mono text-zinc-500 uppercase tracking-widest">Live_Sync_Active</span>
                 </div>
             </div>
 
@@ -130,27 +133,27 @@ const Timeline = () => {
             <div className="flex-1 overflow-hidden flex flex-col bg-[#050505]">
                 {/* Scale Switcher */}
                 <div className="h-10 bg-zinc-900/30 border-b border-zinc-900 px-6 flex items-center gap-4">
-                    <div className="flex bg-black/50 p-1 rounded border border-zinc-800">
+                    <div className="flex bg-zinc-950 p-1 rounded-sm border border-zinc-800">
                         {['Day', 'Week'].map(mode => (
-                             <button 
+                            <button
                                 key={mode}
                                 onClick={() => setViewMode(mode.toLowerCase())}
-                                className={`px-4 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all ${viewMode === mode.toLowerCase() ? 'bg-zinc-800 text-amber-500 shadow-lg' : 'text-zinc-600 hover:text-zinc-400'}`}
-                             >
+                                className={`px-5 py-1.5 rounded-sm text-[9px] font-black uppercase tracking-[0.2em] transition-all ${viewMode === mode.toLowerCase() ? 'bg-zinc-800 text-amber-500 shadow-lg border border-zinc-700' : 'text-zinc-600 hover:text-zinc-400'}`}
+                            >
                                 {mode}
-                             </button>
+                            </button>
                         ))}
                     </div>
                 </div>
 
                 <div className="flex-1 overflow-auto custom-scrollbar relative" ref={containerRef}>
                     {/* Grid Background */}
-                    <div 
+                    <div
                         className="absolute top-0 bottom-0 pointer-events-none"
                         style={{ width: days * dayWidth, left: sidebarWidth }}
                     >
                         {dateRange.map((date, idx) => (
-                            <div 
+                            <div
                                 key={idx}
                                 className={`absolute top-0 bottom-0 border-r border-zinc-900/50 ${date.getDay() === 0 || date.getDay() === 6 ? 'bg-zinc-900/10' : ''}`}
                                 style={{ left: idx * dayWidth, width: dayWidth }}
@@ -169,20 +172,20 @@ const Timeline = () => {
                             return (
                                 <div key={task._id} className="flex group" style={{ height: rowHeight }}>
                                     {/* Sidebar Name */}
-                                    <div className="w-[250px] sticky left-0 bg-[#050505] border-r border-zinc-800 z-10 flex items-center px-6 gap-3 group-hover:bg-zinc-900/50 transition-colors">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${task.status === 'Done' ? 'bg-emerald-500' : task.isBlocked ? 'bg-red-500' : 'bg-amber-500'}`}></div>
+                                    <div className="w-[250px] sticky left-0 bg-[#050505] border-r border-zinc-900 z-10 flex items-center px-6 gap-3 group-hover:bg-zinc-900/50 transition-colors font-mono">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${task.status === 'Done' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : task.isBlocked ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`}></div>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-zinc-300 truncate uppercase tracking-tighter">{task.name}</p>
-                                            <p className="text-[11px] font-mono text-zinc-600 uppercase">{task.project?.name || 'ROOT'}</p>
+                                            <p className="text-[11px] font-black text-zinc-300 truncate uppercase tracking-tight">{task.name}</p>
+                                            <p className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest mt-0.5">{task.project?.name || 'ROOT'}</p>
                                         </div>
                                     </div>
 
                                     {/* Task Bar */}
                                     <div className="relative flex-1">
-                                        <div 
-                                            className={`absolute top-3 bottom-3 rounded cursor-move transition-shadow hover:shadow-[0_0_15px_rgba(245,158,11,0.2)] border flex flex-col justify-center px-3 z-20 ${task.status === 'Done' 
-                                                ? 'bg-emerald-900/30 border-emerald-800/50 text-emerald-400' 
-                                                : task.isBlocked 
+                                        <div
+                                            className={`absolute top-3 bottom-3 rounded cursor-move transition-shadow hover:shadow-[0_0_15px_rgba(245,158,11,0.2)] border flex flex-col justify-center px-3 z-20 ${task.status === 'Done'
+                                                ? 'bg-emerald-900/30 border-emerald-800/50 text-emerald-400'
+                                                : task.isBlocked
                                                     ? 'bg-red-900/30 border-red-800/50 text-red-500'
                                                     : 'bg-zinc-900/80 border-zinc-700 text-zinc-300'}`}
                                             style={{ left: pos.left, width: pos.width }}
@@ -206,10 +209,10 @@ const Timeline = () => {
                                                 document.addEventListener('mouseup', onMouseUp);
                                             }}
                                         >
-                                            <span className="text-xs font-black uppercase tracking-widest truncate">{task.name}</span>
-                                            <div className="flex justify-between items-center mt-1">
-                                                <span className="text-[10px] font-mono text-zinc-500">{new Date(task.startDate).toLocaleDateString([], { month: '2-digit', day: '2-digit' })}</span>
-                                                <span className="text-[10px] font-mono text-zinc-500">{new Date(task.dueDate).toLocaleDateString([], { month: '2-digit', day: '2-digit' })}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.15em] truncate">{task.name}</span>
+                                            <div className="flex justify-between items-center mt-1.5 opacity-60">
+                                                <span className="text-[8px] font-black font-mono text-zinc-400">{new Date(task.startDate).toLocaleDateString([], { month: '2-digit', day: '2-digit' })}</span>
+                                                <span className="text-[8px] font-black font-mono text-zinc-400">{new Date(task.dueDate).toLocaleDateString([], { month: '2-digit', day: '2-digit' })}</span>
                                             </div>
                                         </div>
 
@@ -218,7 +221,7 @@ const Timeline = () => {
                                             const depTask = tasks.find(t => t._id === depId);
                                             if (!depTask) return null;
                                             // Simple horizontal line to indicate link
-                                            return null; 
+                                            return null;
                                         })}
                                     </div>
                                 </div>
@@ -228,7 +231,8 @@ const Timeline = () => {
                 </div>
             </div>
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                     height: 6px;

@@ -64,7 +64,7 @@ const Chat = () => {
             if (selectedUser && String(sender.id) === String(selectedUser._id)) {
                 setMessages(prev => [...prev, message]);
             }
-            
+
             setChatList(prev => prev.map(c => {
                 if (String(c._id) === String(sender.id)) {
                     return { ...c, lastMessage: { content: message.content, createdAt: message.createdAt, sender: sender.id } };
@@ -74,7 +74,7 @@ const Chat = () => {
         });
 
         socket.on('private:sent', ({ message }) => {
-             setChatList(prev => prev.map(c => {
+            setChatList(prev => prev.map(c => {
                 if (String(c._id) === String(message.recipient)) {
                     return { ...c, lastMessage: { content: message.content, createdAt: message.createdAt, sender: message.sender } };
                 }
@@ -138,23 +138,23 @@ const Chat = () => {
         <div className="bg-[#050505] h-[calc(100vh-4rem)] flex overflow-hidden font-sans text-zinc-300">
             {/* Sidebar */}
             <div className="w-80 border-r border-zinc-800/50 flex flex-col bg-[#080808]">
-                <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
-                    <h2 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                <div className="p-6 border-b-2 border-zinc-900 flex items-center justify-between">
+                    <h2 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-sm shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
                         Operatives
                     </h2>
-                    <span className="text-[10px] font-mono text-zinc-600 bg-zinc-900/50 px-2 py-0.5 rounded border border-zinc-800">
-                        {chatList.length} total
+                    <span className="text-[9px] font-black font-mono text-zinc-700 bg-zinc-950 px-2 py-0.5 rounded-sm border border-zinc-900 uppercase tracking-widest">
+                        {chatList.length}_UPLINKS
                     </span>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {isLoading ? (
-                         <div className="p-4 space-y-3">
+                        <div className="p-4 space-y-3">
                             {[1, 2, 3, 4, 5, 6].map(i => (
                                 <div key={i} className="h-16 bg-zinc-900/30 rounded border border-zinc-800/50 animate-pulse"></div>
                             ))}
-                         </div>
+                        </div>
                     ) : (
                         chatList.map(contact => (
                             <button
@@ -162,24 +162,24 @@ const Chat = () => {
                                 onClick={() => setSelectedUser(contact)}
                                 className={`w-full p-4 flex items-center gap-4 border-b border-zinc-900/50 transition-all text-left outline-none relative group ${selectedUser?._id === contact._id ? 'bg-zinc-900/80 shadow-[inset_4px_0_0_0_#f59e0b]' : 'hover:bg-zinc-900/40'}`}
                             >
-                                <div className={`w-11 h-11 rounded border flex items-center justify-center font-mono text-xs transition-all ${selectedUser?._id === contact._id ? 'bg-amber-500 border-amber-400 text-black shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-zinc-900 border-zinc-800 text-zinc-500 group-hover:border-zinc-700'}`}>
+                                <div className={`w-10 h-10 rounded-sm border flex items-center justify-center font-mono text-[10px] font-black transition-all ${selectedUser?._id === contact._id ? 'bg-zinc-100 border-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-zinc-950 border-zinc-900 text-zinc-600 group-hover:border-zinc-800'}`}>
                                     {contact.name.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-0.5">
-                                        <p className={`text-sm font-bold truncate tracking-tight transition-colors ${selectedUser?._id === contact._id ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>{contact.name}</p>
+                                        <p className={`text-[11px] font-black truncate uppercase tracking-tight transition-colors ${selectedUser?._id === contact._id ? 'text-white' : 'text-zinc-500 group-hover:text-zinc-300'}`}>{contact.name}</p>
                                         {contact.lastMessage && (
-                                            <span className="text-[9px] text-zinc-600 font-mono tracking-tighter">
+                                            <span className="text-[8px] text-zinc-700 font-black font-mono tracking-widest">
                                                 {formatTime(contact.lastMessage.createdAt)}
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-1.5 min-w-0">
                                         {typingUsers[contact._id] ? (
-                                            <span className="text-[10px] text-amber-500 font-mono italic animate-pulse">Typing...</span>
+                                            <span className="text-[9px] text-amber-500 font-black font-mono animate-pulse uppercase tracking-widest">_Typing...</span>
                                         ) : (
-                                            <p className="text-[11px] text-zinc-600 truncate font-mono">
-                                                {contact.lastMessage?.content || `ID: ${contact._id.substring(contact._id.length-6)}`}
+                                            <p className="text-[9px] text-zinc-700 truncate font-bold uppercase tracking-widest">
+                                                {contact.lastMessage?.content || `REF: ${contact._id.substring(contact._id.length - 4)}`}
                                             </p>
                                         )}
                                     </div>
@@ -197,14 +197,14 @@ const Chat = () => {
                         {/* Chat Header */}
                         <div className="h-16 border-b border-zinc-900 px-6 flex items-center justify-between bg-[#050505]/80 backdrop-blur-xl z-20">
                             <div className="flex items-center gap-4">
-                                <div className="w-9 h-9 rounded bg-[#111] border border-zinc-800 flex items-center justify-center font-mono text-amber-500 font-black text-xs shadow-lg">
+                                <div className="w-10 h-10 rounded-sm bg-zinc-950 border border-zinc-900 flex items-center justify-center font-mono text-amber-500 font-black text-[10px] shadow-lg">
                                     {selectedUser.name.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-black text-white tracking-wide uppercase">{selectedUser.name}</h3>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                        <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.15em]">{selectedUser.role} • UPLINK_STABLE</p>
+                                    <h3 className="text-[11px] font-black text-white tracking-[0.2em] uppercase">{selectedUser.name}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></span>
+                                        <p className="text-[8px] font-black font-mono text-zinc-600 uppercase tracking-[0.2em]">{selectedUser.role} • UPLINK_STABLE</p>
                                     </div>
                                 </div>
                             </div>
@@ -227,11 +227,11 @@ const Chat = () => {
                                     <div className="w-16 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent mt-4 text-center"></div>
                                 </div>
                             )}
-                            
+
                             {messages.map((msg, idx) => {
                                 const isOwn = String(msg.sender) === String(user._id);
                                 const nextMsg = messages[idx + 1];
-                                const isRoundTop = !messages[idx-1] || String(messages[idx-1].sender) !== String(msg.sender);
+                                const isRoundTop = !messages[idx - 1] || String(messages[idx - 1].sender) !== String(msg.sender);
                                 const isRoundBottom = !nextMsg || String(nextMsg.sender) !== String(msg.sender);
 
                                 return (
@@ -242,8 +242,8 @@ const Chat = () => {
                                             </div>
                                         )}
                                         <div className={`group relative max-w-[80%] md:max-w-[65%]`}>
-                                            <div className={`px-4 py-3 text-[13px] leading-relaxed transition-all shadow-xl ${isOwn 
-                                                ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black border border-amber-400/50 shadow-amber-500/10' 
+                                            <div className={`px-4 py-3 text-[13px] leading-relaxed transition-all shadow-xl ${isOwn
+                                                ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black border border-amber-400/50 shadow-amber-500/10'
                                                 : 'bg-[#0a0a0a] border border-zinc-800/80 text-zinc-100 hover:border-zinc-700'} 
                                                 ${isRoundTop ? (isOwn ? 'rounded-tl-xl rounded-tr-md' : 'rounded-tr-xl rounded-tl-md') : ''}
                                                 ${isRoundBottom ? 'rounded-bl-xl rounded-br-xl' : ''}
@@ -253,7 +253,7 @@ const Chat = () => {
                                             </div>
                                             {isRoundBottom && (
                                                 <div className={`absolute -bottom-5 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-[8px] font-mono text-zinc-600 ${isOwn ? 'right-0' : 'left-0'}`}>
-                                                     STATUS: DELIVERED // SIG: {msg._id?.substring(0, 8)}
+                                                    STATUS: DELIVERED // SIG: {msg._id?.substring(0, 8)}
                                                 </div>
                                             )}
                                         </div>
@@ -292,20 +292,20 @@ const Chat = () => {
                             <div className="mt-3 flex justify-between items-center px-1">
                                 <div className="flex items-center gap-3">
                                     <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest flex items-center gap-2 group-focus-within:text-zinc-500 transition-colors">
-                                        <span className="w-1 h-1 bg-zinc-800 rounded-full"></span> 
+                                        <span className="w-1 h-1 bg-zinc-800 rounded-full"></span>
                                         E2EE_ENCRYPTION: AES_256_GCM
                                     </p>
                                     {isSending && <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping"></div>}
                                 </div>
                                 {typingUsers[selectedUser._id] && (
-                                     <p className="text-[10px] font-mono text-amber-500/80 italic uppercase tracking-wider flex items-center gap-2">
+                                    <p className="text-[10px] font-mono text-amber-500/80 italic uppercase tracking-wider flex items-center gap-2">
                                         <span className="flex gap-0.5">
                                             <span className="w-1 h-1 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                             <span className="w-1 h-1 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                                             <span className="w-1 h-1 bg-amber-500 rounded-full animate-bounce"></span>
                                         </span>
                                         Operative Typing
-                                     </p>
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -330,7 +330,8 @@ const Chat = () => {
                 )}
             </div>
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }

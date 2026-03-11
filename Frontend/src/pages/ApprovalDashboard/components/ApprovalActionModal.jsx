@@ -18,12 +18,12 @@ const ApprovalActionModal = ({ isOpen, onClose, onConfirm, request, actionType }
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
                 onClick={onClose}
             />
 
             {/* Modal Dialog */}
-            <div className="relative bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 overflow-hidden transform transition-all">
+            <div className="relative bg-zinc-900 border border-zinc-800 rounded-sm w-full max-w-md shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] p-6 overflow-hidden transform transition-all font-mono">
 
                 {/* Header Ribbon Colors based on action */}
                 <div className={`absolute top-0 left-0 right-0 h-1.5 ${isApprove ? 'bg-emerald-500' : 'bg-red-500'}`} />
@@ -41,26 +41,26 @@ const ApprovalActionModal = ({ isOpen, onClose, onConfirm, request, actionType }
                         )}
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-white">
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight">
                             {isApprove ? 'Confirm Approval' : 'Reject Request'}
                         </h3>
-                        <p className="text-xs text-slate-400">Request: {request.requestId}</p>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">RequestID: {request.requestId?.slice(0, 12)}</p>
                     </div>
                 </div>
 
                 <div className="space-y-4 mb-6">
-                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-sm text-slate-400">
-                        <span className="block mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Request Context</span>
-                        <span className="text-slate-200">"{request.reason}"</span>
+                    <div className="bg-zinc-950 p-3 rounded-sm border border-zinc-800 text-[11px] text-zinc-400 leading-relaxed uppercase tracking-wide">
+                        <span className="block mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600 border-b border-zinc-800 pb-1">System Context</span>
+                        <span className="italic">"{request.reason}"</span>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-400 mb-2">
-                            Provide {isApprove ? 'Approval Notes' : 'Rejection Reason'} <span className="text-slate-600">(Optional)</span>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                            {isApprove ? 'Approval Notes' : 'Rejection Reason'} <span className="text-zinc-700 font-normal">(OPTIONAL)</span>
                         </label>
                         <textarea
-                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors h-24 resize-none"
-                            placeholder={isApprove ? "Everything looks good..." : "Cannot approve because..."}
+                            className="w-full bg-zinc-950 border border-zinc-800 rounded-sm p-3 text-zinc-200 placeholder-zinc-800 focus:outline-none focus:border-amber-500 transition-all h-24 resize-none text-xs uppercase tracking-wider"
+                            placeholder={isApprove ? "ENTER VALIDATION NOTES..." : "PROVIDE TERMINATION REASON..."}
                             value={comments}
                             onChange={(e) => setComments(e.target.value)}
                         />
@@ -68,21 +68,21 @@ const ApprovalActionModal = ({ isOpen, onClose, onConfirm, request, actionType }
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors border border-transparent"
+                        className="px-4 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest hover:text-zinc-200 hover:bg-zinc-800 rounded-sm transition-all"
                     >
-                        Cancel
+                        Abort
                     </button>
                     <button
                         onClick={() => onConfirm(comments)}
-                        className={`px-5 py-2 text-sm font-medium text-white rounded-lg transition-all shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${isApprove
-                                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20 focus:ring-emerald-500'
-                                : 'bg-red-600 hover:bg-red-500 shadow-red-500/20 focus:ring-red-500'
+                        className={`px-5 py-2 text-[10px] font-bold text-black uppercase tracking-widest rounded-sm transition-all ${isApprove
+                            ? 'bg-emerald-600 hover:bg-emerald-500'
+                            : 'bg-red-600 hover:bg-red-500 text-white'
                             }`}
                     >
-                        {isApprove ? 'Approve Request' : 'Reject Request'}
+                        {isApprove ? 'Execute Approval' : 'Reject Proposal'}
                     </button>
                 </div>
             </div>

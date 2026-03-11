@@ -11,7 +11,7 @@ const projectSchema = new mongoose.Schema({
     priority: { type: String, enum: ['Low', 'Medium', 'High'], default: 'Medium' },
     status: { type: String, enum: ['Planning', 'In Progress', 'Done', 'Completed'], default: 'Planning', index: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
-    dueDate: { type: Date }
+    dueDate: { type: Date, required: true }
 }, { timestamps: true });
 
 // Cleanup Tasks when a Project is deleted to prevent orphan records

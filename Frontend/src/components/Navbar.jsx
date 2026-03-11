@@ -1,10 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-    LayoutDashboard, Briefcase, CheckSquare, Calendar, 
-    BarChart2, Users, MessageSquare, ShieldCheck, 
-    Bell, Terminal, LogOut 
+import {
+    LayoutDashboard, Briefcase, CheckSquare, Calendar,
+    BarChart2, Users, MessageSquare, ShieldCheck,
+    Bell, Terminal, LogOut
 } from 'lucide-react';
+import NotificationDropdown from './NotificationDropdown/NotificationDropdown';
+
+import Logo from './Logo';
 
 const Navbar = () => {
     const location = useLocation();
@@ -16,14 +19,14 @@ const Navbar = () => {
         const isActive = location.pathname === to;
         return (
             <li>
-                <Link 
-                    to={to} 
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-sm transition-all font-mono text-[13px] uppercase tracking-wider group
-                        ${isActive 
-                            ? 'text-amber-500 bg-amber-500/5 shadow-[inset_0_-1px_0_0_#f59e0b]' 
+                <Link
+                    to={to}
+                    className={`flex items-center gap-2.5 px-4 py-2 rounded-sm transition-all font-mono text-base uppercase tracking-wider group
+                        ${isActive
+                            ? 'text-amber-500 bg-amber-500/5 shadow-[inset_0_-1px_0_0_#f59e0b]'
                             : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
                 >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-zinc-600 group-hover:text-amber-500/70'}`} />
+                    <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-amber-500' : 'text-zinc-600 group-hover:text-amber-500/70'}`} />
                     <span className="hidden lg:inline">{label}</span>
                 </Link>
             </li>
@@ -31,13 +34,11 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="bg-black/90 backdrop-blur-xl border-b border-zinc-900 sticky top-0 z-50 py-2 px-4 shadow-2xl">
-            <div className="max-w-[1600px] mx-auto flex justify-between items-center gap-8">
+        <nav className="bg-black/90 backdrop-blur-xl border-b border-zinc-900 sticky top-0 z-50 py-0 px-4 shadow-2xl h-20 flex items-center">
+            <div className="max-w-[1600px] mx-auto flex justify-between items-center gap-8 w-full">
                 {/* Logo Section */}
-                <Link to="/" className="flex items-center gap-2 group shrink-0">
-                    <div className="w-7 h-7 bg-zinc-900 border border-zinc-800 rounded flex items-center justify-center group-hover:border-amber-500 transition-all shadow-inner">
-                        <span className="text-amber-500 font-black font-mono text-xs">PT</span>
-                    </div>
+                <Link to="/dashboard" className="flex items-center gap-2 group shrink-0">
+                    <Logo size="md" showText={true} />
                 </Link>
 
                 {/* Primary Navigation */}
@@ -55,13 +56,12 @@ const Navbar = () => {
                             <NavLink to="/timeline" icon={Calendar} label="Timeline" />
                             <NavLink to="/analytics" icon={BarChart2} label="Analytics" />
                             <NavLink to="/chat" icon={MessageSquare} label="Chat" />
-                            
+
                             {(user.role === 'admin' || user.role === 'manager') && (
                                 <NavLink to="/approvals" icon={ShieldCheck} label="Approvals" />
                             )}
-                            
-                            <NavLink to="/notifications" icon={Bell} label="Alerts" />
-                            
+                            <NotificationDropdown />
+
                             {user.role === 'admin' && (
                                 <NavLink to="/audit-logs" icon={Terminal} label="Logs" />
                             )}
@@ -77,8 +77,8 @@ const Navbar = () => {
                                 <span className="text-[12px] font-bold text-zinc-200 uppercase tracking-tighter leading-none">{user.name}</span>
                                 <span className="text-[10px] font-mono text-amber-600 uppercase tracking-widest">{user.role}</span>
                             </div>
-                            <button 
-                                onClick={logout} 
+                            <button
+                                onClick={logout}
                                 className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/5 rounded transition-all group"
                                 title="Disconnect"
                             >

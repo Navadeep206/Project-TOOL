@@ -16,6 +16,7 @@ const router = express.Router();
 // 1. View routes (Based on implicit role of requester)
 router.get('/pending', approvalController.getPendingApprovals);
 router.get('/history', approvalController.getApprovalHistory);
+router.get('/my-requests', approvalController.getMyRequests);
 
 // 2. Creation route (Anyone can request, middleware extracts role)
 router.post(

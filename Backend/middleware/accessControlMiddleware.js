@@ -109,3 +109,39 @@ export const validateTaskOwnership = async (req, res, next) => {
         res.status(500).json({ message: "Internal server error during task ownership validation." });
     }
 };
+
+/**
+ * Ensures user has authority to manage a specific team.
+ * - Admin/Manager: Global authority.
+ * - Team Lead: Can manage their specific team (even if role is Member).
+ */
+export const validateTeamManagementAccess = async (req, res, next) => {
+    try {
+        const teamId = req.params.id || req.body.teamId;
+
+        if (!teamId) {
+            return res.status(400).json({ message: "Team context is required for this operation." });
+        }
+
+        if (req.user.role === ROLES.ADMIN || req.user.role === ROLES.MANAGER) {
+            return next();
+        }
+
+        const team = await Team.findById(teamId);
+        if (!team) {
+            return res.status(404).json({ message: "Team not found." });
+        }
+
+        // Check if current user is the assigned Lead
+        if (team.lead.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "Access Denied: Only Admins, Managers, or the Team Lead can manage this unit."
+            });
+        }
+
+        next();
+    } catch (error) {
+        console.error("Access Control - Team Management Validation Error:", error);
+        res.status(500).json({ message: "Internal server error during team authority validation." });
+    }
+};

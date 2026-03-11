@@ -1,18 +1,55 @@
 import Task from '../models/taskModel.js';
+import Team from '../models/teamModel.js';
+import Project from '../models/projectModel.js';
 import { notificationService } from '../services/notification.service.js';
 import { ROLES } from '../constants/roles.js';
 
 export const getTasks = async (req, res) => {
     try {
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 50; // Higher default for Kanban views
+        const search = req.query.search || '';
+        const startIndex = (page - 1) * limit;
+
         let query = {};
 
-        // isolation: Members only see tasks assigned to them
-        if (req.user && req.user.role === ROLES.MEMBER) {
-            query = { assignedTo: req.user.id };
+        if (search) {
+            query.title = { $regex: search, $options: 'i' };
         }
 
-        const tasks = await Task.find(query);
-        res.status(200).json({ success: true, count: tasks.length, data: tasks });
+        // Support explicit project or stage filtering
+        if (req.query.projectId) query.project = req.query.projectId;
+        if (req.query.stage) query.stage = req.query.stage;
+
+        // Isolation: Members see tasks assigned to them, OR all tasks in projects they lead a team for
+        if (req.user && req.user.role === ROLES.MEMBER) {
+            // 1. Get projects where user is a team lead
+            const leadTeams = await Team.find({ lead: req.user.id }).select('project');
+            const projectIds = leadTeams.map(t => t.project).filter(id => id);
+
+            query.$or = [
+                { assignedTo: req.user.id },
+                { project: { $in: projectIds } }
+            ];
+        }
+
+        const total = await Task.countDocuments(query);
+        const tasks = await Task.find(query)
+            .skip(startIndex)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: tasks.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                total
+            },
+            data: tasks
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -28,16 +65,9 @@ export const createTask = async (req, res) => {
         const newTask = new Task(req.body);
         const savedTask = await newTask.save();
 
-        // Trigger Notification if assigned
-        if (savedTask.assignedTo) {
-            notificationService.dispatch({
-                recipientId: savedTask.assignedTo,
-                senderId: req.user.id,
-                type: 'task_assigned',
-                message: `New task assigned: ${savedTask.name}`,
-                metadata: { taskId: savedTask._id }
-            });
-        }
+        // Identify Stakeholders for Notifications (Assignee + Project Manager)
+        const project = await Project.findById(savedTask.project);
+        res.locals.stakeholders = [savedTask.assignedTo, project?.owner].filter(id => id);
 
         res.status(201).json({ success: true, data: savedTask });
     } catch (error) {
@@ -67,9 +97,9 @@ export const updateTask = async (req, res) => {
             const taskCheck = await Task.findById(id).populate('dependencies');
             const stillBlocked = taskCheck.dependencies.some(dep => dep.status !== 'Done');
             if (stillBlocked) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: "Execution blocked: One or more dependencies are not yet complete." 
+                return res.status(400).json({
+                    success: false,
+                    message: "Execution blocked: One or more dependencies are not yet complete."
                 });
             }
         }
@@ -91,16 +121,9 @@ export const updateTask = async (req, res) => {
             }
         }
 
-        // Trigger Notification if assignment changed
-        if (updatedTask.assignedTo && (!oldTask.assignedTo || oldTask.assignedTo.toString() !== updatedTask.assignedTo.toString())) {
-            notificationService.dispatch({
-                recipientId: updatedTask.assignedTo,
-                senderId: req.user.id,
-                type: 'task_assigned',
-                message: `Task assigned to you: ${updatedTask.name}`,
-                metadata: { taskId: updatedTask._id }
-            });
-        }
+        // Identify Stakeholders for Notifications (Assignee + Project Manager)
+        const taskProject = await Project.findById(updatedTask.project);
+        res.locals.stakeholders = [updatedTask.assignedTo, taskProject?.owner].filter(id => id);
 
         res.status(200).json({ success: true, data: updatedTask });
     } catch (error) {
@@ -112,7 +135,7 @@ export const deleteTask = async (req, res) => {
     try {
         const { id } = req.params;
         const task = await Task.findById(id);
-        
+
         if (!task) {
             return res.status(404).json({ success: false, message: "Task not found" });
         }
@@ -131,7 +154,7 @@ export const deleteTask = async (req, res) => {
                 { _id: { $in: task.dependents } },
                 { $pull: { dependencies: id } }
             );
-            
+
             // Re-calculate isBlocked for all dependents since their dependency just disappeared
             for (const depId of task.dependents) {
                 await refreshBlockingStatus(depId);
@@ -265,7 +288,7 @@ export const getDependencyGraph = async (req, res) => {
         const task = await Task.findById(id)
             .populate('dependencies', 'name status isBlocked')
             .populate('dependents', 'name status isBlocked');
-        
+
         res.status(200).json({ success: true, data: task });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

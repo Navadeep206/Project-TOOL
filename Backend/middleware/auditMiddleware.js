@@ -1,4 +1,4 @@
-import { auditService } from "../services/auditLogService.js";
+import { auditLogService } from "../services/auditLog.service.js";
 
 /**
  * Higher-order function returning a middleware to log generic API actions.
@@ -38,7 +38,7 @@ export const auditAction = (action, resourceType) => {
             };
 
             // Call service asynchronously
-            auditService.logAction({
+            auditLogService.logAction({
                 userId,
                 userRole,
                 action,
@@ -69,7 +69,7 @@ export const auditAuthError = (req, res, next) => {
 
             const emailAttempt = req.body?.email || "unknown";
 
-            auditService.logSecurityError({
+            auditLogService.logSecurityError({
                 action: res.statusCode === 401 ? "LOGIN_FAILED" : "UNAUTHORIZED_ACCESS",
                 resourceType: "auth",
                 description: `Auth Failure on ${req.originalUrl}. Attempted email: ${emailAttempt}`,

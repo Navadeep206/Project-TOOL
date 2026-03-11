@@ -6,6 +6,7 @@ import { Notification } from '../models/notification.model.js';
 import { hashToken, generateRawToken } from '../utils/tokenUtils.js';
 import { ROLES } from '../constants/roles.js';
 import generateToken from '../utils/generateToken.js';
+import { emailService } from '../services/email.service.js';
 
 /**
  * @desc    Fetch pending/accepted invitations for the logged-in user
@@ -39,7 +40,7 @@ export const joinProjectFromInvite = async (req, res) => {
         const invitation = await Invitation.findById(id);
 
         console.log(`[JOIN_START] User ${req.user.email} attempting to join via invite ${id}`);
-        
+
         if (!invitation) {
             console.error(`[JOIN_ERROR] Invitation ${id} not found`);
             return res.status(404).json({ success: false, message: 'Invitation not found' });
@@ -72,7 +73,7 @@ export const joinProjectFromInvite = async (req, res) => {
         if (invitation.projectId) {
             const teams = await Team.find({ project: invitation.projectId });
             console.log(`[JOIN_TEAMS] Found ${teams.length} teams for project ${invitation.projectId}`);
-            
+
             if (teams.length > 0) {
                 for (const team of teams) {
                     const alreadyMember = team.members.some(m => m.user && String(m.user) === String(req.user._id));
@@ -153,7 +154,7 @@ export const sendInvite = async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase();
-        
+
         const existingUser = await User.findOne({ email: normalizedEmail });
 
         const rawToken = generateRawToken();
@@ -183,10 +184,23 @@ export const sendInvite = async (req, res) => {
         const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/accept-invite?token=${rawToken}`;
         console.log(`[INVITE_SENT] To: ${normalizedEmail} | Role: ${role} | Link: ${inviteLink}`);
 
+        // Dispatch email and wait for result
+        let emailSent = false;
+        try {
+            emailSent = await emailService.sendInvitationEmail(normalizedEmail, inviteLink, role, project.name);
+        } catch (emailErr) {
+            console.error('[INVITE_EMAIL_ERROR]', emailErr);
+        }
+
         res.status(201).json({
             success: true,
-            message: 'Invitation sent successfully',
-            data: { id: invitation._id, debugLink: inviteLink }
+            message: emailSent ? 'Invitation transmitted successfully' : 'Invitation generated, but email transmission failed',
+            data: {
+                id: invitation._id,
+                debugLink: inviteLink,
+                emailSent,
+                recipientEmail: normalizedEmail
+            }
         });
     } catch (error) {
         console.error('[INVITE_SEND_ERROR]', error);
@@ -247,17 +261,17 @@ export const verifyInvite = async (req, res) => {
     try {
         const { token } = req.params;
         const hashedToken = hashToken(token);
-        const invitation = await Invitation.findOne({ 
-            token: hashedToken, 
+        const invitation = await Invitation.findOne({
+            token: hashedToken,
             status: 'pending',
             expiresAt: { $gt: new Date() }
         });
-        
+
         if (!invitation) return res.status(404).json({ message: 'Invalid or expired invitation' });
 
-        res.status(200).json({ 
-            success: true, 
-            data: { email: invitation.email, role: invitation.role, name: invitation.name } 
+        res.status(200).json({
+            success: true,
+            data: { email: invitation.email, role: invitation.role, name: invitation.name }
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

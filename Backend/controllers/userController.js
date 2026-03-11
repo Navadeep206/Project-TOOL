@@ -46,7 +46,6 @@ const createUser = async (req, res, next) => {
         });
 
     } catch (err) {
-        console.error('Registration Error:', err);
         res.status(500).json({ success: false, message: err.message || "Something went wrong" });
     }
 
@@ -66,13 +65,11 @@ const loginUser = async (req, res, next) => {
         const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
-            console.warn(`[Login] User not found: ${normalizedEmail}`);
             import('fs').then(fs => fs.appendFileSync('auth.log', `[${new Date().toISOString()}] User not found: ${normalizedEmail}\n`));
             return res.status(401).json({ success: false, message: "Invalid email or password" });
         }
 
         let isMatch = await user.matchPassword(password);
-        console.log(`[Login] Password match for ${normalizedEmail}: ${isMatch}`);
         import('fs').then(fs => fs.appendFileSync('auth.log', `[${new Date().toISOString()}] Password match for ${normalizedEmail}: ${isMatch}\n`));
 
         if (!isMatch) {
@@ -122,4 +119,36 @@ const getUsers = async (req, res, next) => {
     }
 }
 
-export { createUser, loginUser, deleteUser, getUsers };
+const updateUserRole = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // --- Industry Guard: Role Promotion Approval ---
+        // If promoting to Manager or Admin, require approval if requester is not Admin
+        const criticalRoles = [ROLES.MANAGER, ROLES.ADMIN];
+        if (criticalRoles.includes(role) && req.user.role !== ROLES.ADMIN) {
+            return res.status(202).json({
+                success: true,
+                message: "Role promotion request submitted for approval.",
+                approvalRequired: true,
+                requestType: 'role_promotion',
+                targetEntityId: id,
+                metadata: { newRole: role }
+            });
+        }
+
+        user.role = role;
+        await user.save();
+        res.status(200).json({ success: true, message: "User role updated successfully", data: user });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+}
+
+export { createUser, loginUser, deleteUser, getUsers, updateUserRole };

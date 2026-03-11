@@ -11,7 +11,6 @@ import Home from './pages/Home.jsx';
 import Teams from './pages/Teams.jsx';
 import Chat from './pages/Chat.jsx';
 import AcceptInvite from './pages/AcceptInvite.jsx';
-import Navbar from './components/Navbar.jsx';
 import Timeline from './pages/Timeline.jsx';
 import Analytics from './pages/Analytics.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -21,6 +20,8 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AuditLogDashboard from './pages/AuditLog/AuditLogDashboard.jsx';
 import ApprovalDashboard from './pages/ApprovalDashboard/ApprovalDashboard.jsx';
 import NotificationPage from './pages/Notifications/NotificationPage.jsx';
+
+import DashboardLayout from './components/Layout/DashboardLayout.jsx';
 
 const AppContent = () => {
   return (
@@ -38,22 +39,28 @@ const AppContent = () => {
           }
         }}
       />
-      <Navbar />
+
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-        <Route path="/timeline" element={<ProtectedRoute><Timeline /></ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-        <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-        <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
-        <Route path="/approvals" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><ApprovalDashboard /></ProtectedRoute>} />
-        <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
-        <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin']}><AuditLogDashboard /></ProtectedRoute>} />
+
+        {/* Protected Dashboard Routes */}
+        <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/timeline" element={<Timeline />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/approvals" element={<ApprovalDashboard />} />
+          <Route path="/notifications" element={<NotificationPage />} />
+          <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin']}><AuditLogDashboard /></ProtectedRoute>} />
+        </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

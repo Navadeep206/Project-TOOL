@@ -60,8 +60,9 @@ const formatTimeAgo = (dateStr) => {
 };
 
 const NotificationItem = ({ notification, onMarkRead, onAction }) => {
+    if (!notification) return null;
     const config = getNotificationConfig(notification.type);
-    const { sender, message, createdAt, isRead, _id, metadata } = notification;
+    const { senderId: sender, message, createdAt, isRead, _id, metadata } = notification;
 
     const isInvite = metadata?.type === 'PROJECT_INVITE';
 
@@ -81,11 +82,11 @@ const NotificationItem = ({ notification, onMarkRead, onAction }) => {
 
                 {/* Avatar or Icon */}
                 <div className="ml-2 mr-3 mt-1 shrink-0">
-                    {sender && sender.profileImage ? (
-                        <img src={sender.profileImage} alt="User avatar" className="w-9 h-9 rounded-full object-cover border border-slate-700" />
+                    {sender && typeof sender === 'object' && sender.profileImage ? (
+                        <img src={sender.profileImage} alt="User avatar" className="w-9 h-9 rounded-full object-cover border border-zinc-800" />
                     ) : (
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center border ${config.bgClass}`}>
-                            {config.icon}
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center border ${config?.bgClass || 'bg-zinc-800'}`}>
+                            {config?.icon || <div className="w-1 h-1 bg-white rounded-full" />}
                         </div>
                     )}
                 </div>

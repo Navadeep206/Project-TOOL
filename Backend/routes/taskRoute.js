@@ -9,6 +9,7 @@ import { validateStatusTransition } from '../middleware/statusWorkflow.js';
 import { ROLES } from '../constants/roles.js';
 import { validateRequest } from '../middleware/validateMiddleware.js';
 import { taskSchema } from '../validation/schemas.js';
+import { notificationHooks } from '../middleware/notification.hooks.js';
 
 const router = express.Router();
 
@@ -19,24 +20,27 @@ router.get('/', protect, getTasks);
 router.get('/timeline', protect, getTimelineTasks);
 
 // Create Task - Allowed for Admins and Managers. Checked for Project Access & Proper Team Membership.
-router.post('/', 
-    protect, 
-    authorizeRoles(ROLES.ADMIN, ROLES.MANAGER), 
+router.post('/',
+    protect,
+    authorizeRoles(ROLES.ADMIN, ROLES.MANAGER),
+    notificationHooks.onTaskAssignment,
     validateRequest(taskSchema),
-    validateProjectAccess, 
-    validateAssignment, 
-    auditAction('CREATE_TASK', 'task'), 
+    validateProjectAccess,
+    validateAssignment,
+    auditAction('CREATE_TASK', 'task'),
     createTask
 );
 
 // Update Task - Checked for correct context, ownership, membership and valid status transitions.
-router.put('/:id', 
-    protect, 
+router.put('/:id',
+    protect,
+    notificationHooks.onTaskAssignment,
+    notificationHooks.onStatusChange,
     validateRequest(taskSchema.partial()),
-    validateTaskOwnership, 
-    validateAssignment, 
-    validateStatusTransition, 
-    auditAction('UPDATE_TASK', 'task'), 
+    validateTaskOwnership,
+    validateAssignment,
+    validateStatusTransition,
+    auditAction('UPDATE_TASK', 'task'),
     updateTask
 );
 

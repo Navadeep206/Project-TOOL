@@ -123,7 +123,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // 404 Handler for unmatched API routes
-app.use('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
     console.warn(`[404 NOT FOUND] ${req.method} ${req.originalUrl} - No route matched`);
     res.status(404).json({
         success: false,

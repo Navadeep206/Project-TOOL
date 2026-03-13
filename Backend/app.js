@@ -43,6 +43,9 @@ console.log(`[Env Check] ALLOWED_ORIGINS: ${process.env.ALLOWED_ORIGINS ? 'PRESE
 
 const app = express();
 
+// Enable trust proxy for Render (required for express-rate-limit)
+app.set('trust proxy', 1);
+
 // 1. Security Headers - Adjusted for React/Recharts compatibility
 app.use(helmet({
     contentSecurityPolicy: false,

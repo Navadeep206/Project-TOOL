@@ -114,6 +114,20 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'active', timestamp: new Date() });
+});
+
+// 404 Handler for unmatched API routes
+app.use('/api/*', (req, res) => {
+    console.warn(`[404 NOT FOUND] ${req.method} ${req.originalUrl} - No route matched`);
+    res.status(404).json({
+        success: false,
+        message: `API Route Not Found: ${req.method} ${req.originalUrl}`
+    });
+});
+
 // Centralized error handler MUST be the last middleware
 app.use(errorHandler);
 

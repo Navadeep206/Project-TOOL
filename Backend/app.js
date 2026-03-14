@@ -73,9 +73,9 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:5173', 'http://localhost:5174', 'https://projecttool-eo5y.vercel.app'];
+const envOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174', 'https://projecttool-eo5y.vercel.app'];
+const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins])];
 
 app.use(cors({
     origin: (origin, callback) => {

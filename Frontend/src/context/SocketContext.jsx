@@ -20,7 +20,7 @@ export const SocketProvider = ({ children }) => {
         }
 
         // Initialize socket connection with withCredentials for cookie support
-        const newSocket = io(import.meta.env.VITE_API_BASE_URL.replace('/api', ''), {
+        const newSocket = io((import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api').replace('/api', ''), {
             withCredentials: true,
             // We can still pass auth: { token } if it's available in some storage
             // but relying on cookies is more secure for HttpOnly setups.

@@ -26,7 +26,7 @@ export default function AuditLogDashboard() {
             setError(null);
             try {
                 // Fetching all for client-side pagination/filtering demonstration
-                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/audit-logs`, {
+                const response = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/audit-logs`, {
                     withCredentials: true // Attach JWT
                 });
 
@@ -82,7 +82,7 @@ export default function AuditLogDashboard() {
                     </div>
                     <button
                         className="inline-flex items-center px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 font-black text-[10px] transition-all uppercase tracking-[0.2em] rounded-sm shadow-xl flex items-center gap-2"
-                        onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/audit-logs/export?format=csv`, '_blank')}
+                        onClick={() => window.open(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/audit-logs/export?format=csv`, '_blank')}
                     >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

@@ -28,10 +28,10 @@ const Analytics = () => {
         setLoading(true);
         try {
             const [mRes, pRes, dRes, bRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/metrics/${pid}`, { withCredentials: true }),
-                axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/productivity/${pid}`, { withCredentials: true }),
-                axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/priority/${pid}`, { withCredentials: true }),
-                axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/burndown/${pid}`, { withCredentials: true })
+                axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/analytics/metrics/${pid}`, { withCredentials: true }),
+                axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/analytics/productivity/${pid}`, { withCredentials: true }),
+                axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/analytics/priority/${pid}`, { withCredentials: true }),
+                axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/analytics/burndown/${pid}`, { withCredentials: true })
             ]);
 
             setMetrics(mRes.data.data);
@@ -48,7 +48,7 @@ const Analytics = () => {
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/projects`, { withCredentials: true });
+                const res = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/projects`, { withCredentials: true });
                 const fetchedProjects = res.data.data || [];
                 setProjects(fetchedProjects);
                 if (fetchedProjects.length > 0) {

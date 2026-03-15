@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
+            const response = await axios.post(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/users/login`, {
                 email,
                 password
             }, {
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (name, email, password) => {
         try {
-            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/register`, {
+            await axios.post(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/users/register`, {
                 name,
                 email,
                 password

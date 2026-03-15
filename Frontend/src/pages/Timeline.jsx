@@ -18,7 +18,7 @@ const Timeline = () => {
     useEffect(() => {
         const fetchTimeline = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/tasks/timeline`, { withCredentials: true });
+                const res = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/tasks/timeline`, { withCredentials: true });
                 setTasks(res.data.data);
             } catch (error) {
                 toast.error('Failed to load timeline data');
@@ -90,7 +90,7 @@ const Timeline = () => {
         newDue.setDate(newDue.getDate() + deltaDays);
 
         try {
-            await axios.put(`${import.meta.env.VITE_API_BASE_URL}/tasks/${taskId}`, {
+            await axios.put(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/tasks/${taskId}`, {
                 startDate: newStart.toISOString(),
                 dueDate: newDue.toISOString()
             }, { withCredentials: true });

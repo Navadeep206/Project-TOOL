@@ -34,7 +34,7 @@ const ActivityTimeline = ({ projectId = "proj_test_123" }) => {
             setLoading(true);
             try {
                 // You would pass the actual projectId dynamically in production
-                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/v1/activities/project/${projectId}`, {
+                const response = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/v1/activities/project/${projectId}`, {
                     params: { page, limit: 5, actionType: filter === 'all' ? undefined : filter },
                     withCredentials: true // Include HTTP-Only cookies if leveraging them
                 });

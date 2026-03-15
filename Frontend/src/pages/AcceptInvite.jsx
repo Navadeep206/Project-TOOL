@@ -26,7 +26,7 @@ const AcceptInvite = () => {
 
         const fetchInviteInfo = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/users/verify-invite/${token}`);
+                const res = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/users/verify-invite/${token}`);
                 if (res.data.data && res.data.data.name) {
                     setFormData(prev => ({ ...prev, name: res.data.data.name }));
                 }
@@ -55,7 +55,7 @@ const AcceptInvite = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/accept-invite`, {
+            const res = await axios.post(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/users/accept-invite`, {
                 token,
                 name: formData.name,
                 password: formData.password

@@ -31,16 +31,16 @@ const ApprovalDashboard = () => {
                 let endpoint = '';
                 switch (activeTab) {
                     case 'pending':
-                        endpoint = `${import.meta.env.VITE_API_BASE_URL}/v1/approvals/pending`;
+                        endpoint = `${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/v1/approvals/pending`;
                         break;
                     case 'history':
-                        endpoint = `${import.meta.env.VITE_API_BASE_URL}/v1/approvals/history`;
+                        endpoint = `${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/v1/approvals/history`;
                         break;
                     case 'my-requests':
-                        endpoint = `${import.meta.env.VITE_API_BASE_URL}/v1/approvals/my-requests`;
+                        endpoint = `${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/v1/approvals/my-requests`;
                         break;
                     default:
-                        endpoint = `${import.meta.env.VITE_API_BASE_URL}/v1/approvals/pending`;
+                        endpoint = `${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/v1/approvals/pending`;
                 }
 
                 const response = await axios.get(endpoint, {
@@ -92,7 +92,7 @@ const ApprovalDashboard = () => {
 
         try {
             // Send REST call to backend
-            await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/v1/approvals/${selectedRequest._id}/decide`, {
+            await axios.patch(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/v1/approvals/${selectedRequest._id}/decide`, {
                 decision: actionType === 'approve' ? 'approved' : 'rejected',
                 comments: comments
             }, { withCredentials: true });

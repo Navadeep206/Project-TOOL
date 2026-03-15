@@ -34,7 +34,7 @@ const ChatWidget = () => {
         const fetchChatList = async () => {
             setIsLoading(true);
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chat/list`, { withCredentials: true });
+                const res = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/chat/list`, { withCredentials: true });
                 setChatList(res.data.data);
             } catch (error) {
                 console.error('Failed to fetch chat list:', error);
@@ -50,7 +50,7 @@ const ChatWidget = () => {
         if (!selectedUser || !isOpen) return;
         const fetchMessages = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chat/${selectedUser._id}`, { withCredentials: true });
+                const res = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/chat/${selectedUser._id}`, { withCredentials: true });
                 setMessages(res.data.data);
             } catch (error) {
                 console.error('Failed to fetch messages:', error);

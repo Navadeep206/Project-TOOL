@@ -409,7 +409,7 @@ const Tasks = () => {
                                                                 const depId = e.target.value;
                                                                 if (!depId) return;
                                                                 try {
-                                                                    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tasks/${task._id}/dependencies`, { dependencyId: depId }, { withCredentials: true });
+                                                                    await axios.post(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/tasks/${task._id}/dependencies`, { dependencyId: depId }, { withCredentials: true });
                                                                     // Refresh local tasks - simpler than complex sync
                                                                     window.location.reload();
                                                                 } catch (err) {
@@ -442,7 +442,7 @@ const Tasks = () => {
                                                                     <button
                                                                         onClick={async () => {
                                                                             try {
-                                                                                await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/tasks/${task._id}/dependencies`, { data: { dependencyId: depId }, withCredentials: true });
+                                                                                await axios.delete(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/tasks/${task._id}/dependencies`, { data: { dependencyId: depId }, withCredentials: true });
                                                                                 window.location.reload();
                                                                             } catch (err) {
                                                                                 alert("Failed to remove dependency");

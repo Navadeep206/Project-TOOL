@@ -30,7 +30,7 @@ const Teams = () => {
     const { data: users = [], isLoading: usersLoading } = useQuery({
         queryKey: ['users'],
         queryFn: async () => {
-            const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/users`, { withCredentials: true });
+            const res = await axios.get(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/users`, { withCredentials: true });
             return res.data.data || [];
         }
     });
@@ -254,7 +254,7 @@ const Teams = () => {
         }
 
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/admin/invite`, {
+            const res = await axios.post(`${(import.meta.env.VITE_API_BASE_URL || 'https://project-tool-1.onrender.com/api')}/admin/invite`, {
                 email: newMemberEmail,
                 name: newMemberName,
                 role: newMemberRole,

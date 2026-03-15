@@ -171,6 +171,15 @@ export const sendInvite = async (req, res) => {
             expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000)
         });
 
+        try {
+            await invitation.save();
+        } catch (dbErr) {
+            if (dbErr.code === 11000) {
+                return res.status(400).json({ success: false, message: 'An active invitation for this user and project already exists.' });
+            }
+            throw dbErr;
+        }
+
         if (existingUser) {
             await Notification.create({
                 recipientId: existingUser._id,
@@ -204,6 +213,12 @@ export const sendInvite = async (req, res) => {
         });
     } catch (error) {
         console.error('[INVITE_SEND_ERROR]', error);
+        
+        // Final fallback for any other uncaught 11000 errors
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: 'An active invitation for this user and project already exists.' });
+        }
+        
         res.status(500).json({ success: false, message: error.message });
     }
 };

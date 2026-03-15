@@ -154,31 +154,44 @@ export const sendInvite = async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase();
+        console.log(`[INVITE_DEBUG] Initialized. Email: ${normalizedEmail}, Role: ${role}, Project: ${projectId}`);
 
         const existingUser = await User.findOne({ email: normalizedEmail });
+        console.log(`[INVITE_DEBUG] Existing User Found: ${!!existingUser}`);
 
         const rawToken = generateRawToken();
         const encryptedToken = hashToken(rawToken);
-
-        const invitation = await Invitation.create({
-            email: normalizedEmail,
-            name,
-            role,
-            projectId,
-            invitedBy: req.user._id,
-            targetUserId: existingUser ? existingUser._id : null,
-            token: encryptedToken,
-            expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000)
-        });
+        console.log(`[INVITE_DEBUG] Tokens Generated`);
 
         try {
-            await invitation.save();
+            console.log(`[INVITE_DEBUG] Attempting to create Invitation record...`);
+            const invitationParams = {
+                email: normalizedEmail,
+                name,
+                role,
+                projectId,
+                invitedBy: req.user._id,
+                targetUserId: existingUser ? existingUser._id : null,
+                token: encryptedToken,
+                expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000)
+            };
+            console.log(`[INVITE_DEBUG] Payload:`, JSON.stringify(invitationParams));
+
+            const invitation = await Invitation.create(invitationParams);
+            console.log(`[INVITE_DEBUG] Invitation Created Successfully: ${invitation._id}`);
+            
+            // Re-assign for remaining logic
+            req.currentInvitation = invitation;
+
         } catch (dbErr) {
+            console.error(`[INVITE_DEBUG_ERROR] Failed to create invitation:`, dbErr);
             if (dbErr.code === 11000) {
                 return res.status(400).json({ success: false, message: 'An active invitation for this user and project already exists.' });
             }
             throw dbErr;
         }
+
+        const invitation = req.currentInvitation;
 
         if (existingUser) {
             await Notification.create({

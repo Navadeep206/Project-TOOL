@@ -10,6 +10,12 @@ class EmailService {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
+            // Force IPv4 to prevent ENETUNREACH errors on IPv6-only resolution
+            tls: {
+                rejectUnauthorized: false
+            },
+            // Pass family: 4 to node's net.connect
+            family: 4
         });
     }
 

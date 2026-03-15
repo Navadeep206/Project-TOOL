@@ -203,7 +203,7 @@ export const sendInvite = async (req, res) => {
             });
         }
 
-        const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/accept-invite?token=${rawToken}`;
+        const inviteLink = `${process.env.FRONTEND_URL || 'https://projecttool-eo5y.vercel.app'}/accept-invite?token=${rawToken}`;
         console.log(`[INVITE_SENT] To: ${normalizedEmail} | Role: ${role} | Link: ${inviteLink}`);
 
         // Dispatch email and wait for result
